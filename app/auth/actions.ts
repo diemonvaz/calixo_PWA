@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { loginSchema, signupSchema, resetPasswordSchema } from '@/lib/validations/auth';
+import { db, profiles } from '@/db';
 
 export type AuthActionState = {
   error?: string;
@@ -112,6 +113,23 @@ export async function signup(
         error: 'Error al crear la cuenta. Por favor intenta de nuevo.',
         success: false,
       };
+    }
+
+    // Create user profile
+    try {
+      await db.insert(profiles).values({
+        userId: data.user.id,
+        displayName: displayName,
+        avatarEnergy: 100,
+        isPrivate: false,
+        isPremium: false,
+        coins: 0,
+        streak: 0,
+      });
+    } catch (profileError) {
+      console.error('Error creating profile:', profileError);
+      // El usuario se creó pero el perfil falló - esto no debería bloquear el registro
+      // El perfil se puede crear más tarde si es necesario
     }
 
     return {

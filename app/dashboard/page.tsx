@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation';
 import { signOut } from '../auth/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { db, profiles, userChallenges } from '@/db';
+import { eq, and, count } from 'drizzle-orm';
+import Link from 'next/link';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -15,6 +18,43 @@ export default async function DashboardPage() {
     redirect('/auth/login');
   }
 
+  // Get user profile
+  const [profile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.userId, user.id))
+    .limit(1);
+
+  // Get completed challenges count
+  const completedChallenges = await db
+    .select({ count: count() })
+    .from(userChallenges)
+    .where(
+      and(
+        eq(userChallenges.userId, user.id),
+        eq(userChallenges.status, 'completed')
+      )
+    );
+
+  const completedCount = completedChallenges[0]?.count || 0;
+
+  // Calculate energy level
+  const energyLevel = profile
+    ? profile.avatarEnergy >= 70
+      ? 'Alta'
+      : profile.avatarEnergy >= 40
+      ? 'Media'
+      : 'Baja'
+    : 'Media';
+
+  const energyColor = profile
+    ? profile.avatarEnergy >= 70
+      ? 'text-accent-green'
+      : profile.avatarEnergy >= 40
+      ? 'text-yellow-600'
+      : 'text-accent-red'
+    : 'text-yellow-600';
+
   return (
     <div className="min-h-screen bg-beige p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -25,36 +65,57 @@ export default async function DashboardPage() {
               ¡Bienvenido de vuelta! 👋
             </h1>
             <p className="text-neutral-gray mt-2">
-              {user.user_metadata.display_name || user.email}
+              {profile?.displayName || user.email}
             </p>
+            {profile?.isPremium && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                ✓ Premium
+              </span>
+            )}
           </div>
-          <form action={signOut}>
-            <Button variant="outline">
-              Cerrar Sesión
-            </Button>
-          </form>
+          <div className="flex gap-2">
+            <Link href="/profile">
+              <Button variant="outline">
+                Mi Perfil
+              </Button>
+            </Link>
+            <form action={signOut}>
+              <Button variant="outline">
+                Cerrar Sesión
+              </Button>
+            </form>
+          </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-soft-blue">0</CardTitle>
+              <CardTitle className="text-soft-blue">{completedCount}</CardTitle>
               <CardDescription>Retos Completados</CardDescription>
             </CardHeader>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-accent-green">0</CardTitle>
+              <CardTitle className="text-accent-green">{profile?.coins || 0}</CardTitle>
               <CardDescription>Monedas Ganadas</CardDescription>
             </CardHeader>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-dark-navy">0</CardTitle>
+              <CardTitle className="text-dark-navy">{profile?.streak || 0}</CardTitle>
               <CardDescription>Días de Racha</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className={energyColor}>
+                {profile?.avatarEnergy || 100}
+              </CardTitle>
+              <CardDescription>Energía CALI ({energyLevel})</CardDescription>
             </CardHeader>
           </Card>
         </div>
@@ -122,13 +183,29 @@ export default async function DashboardPage() {
                 <dd className="font-medium">{user.email}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-neutral-gray">ID de Usuario:</dt>
-                <dd className="font-medium font-mono text-sm">{user.id}</dd>
+                <dt className="text-neutral-gray">Nombre:</dt>
+                <dd className="font-medium">{profile?.displayName || 'No configurado'}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-neutral-gray">Creado:</dt>
+                <dt className="text-neutral-gray">Tipo de Cuenta:</dt>
                 <dd className="font-medium">
-                  {new Date(user.created_at).toLocaleDateString('es-ES')}
+                  {profile?.isPremium ? 'Premium ✓' : 'Gratuita'}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-neutral-gray">Privacidad:</dt>
+                <dd className="font-medium">
+                  {profile?.isPrivate ? 'Perfil Privado 🔒' : 'Perfil Público 🌍'}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-neutral-gray">Miembro desde:</dt>
+                <dd className="font-medium">
+                  {new Date(user.created_at).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
                 </dd>
               </div>
             </dl>
