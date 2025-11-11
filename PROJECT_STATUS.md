@@ -2,9 +2,9 @@
 
 ## 📊 Overall Progress
 
-**Phases Completed:** 3 / 13 (23.1%)  
-**Status:** Phase 3 Complete ✅  
-**Last Updated:** November 10, 2025
+**Phases Completed:** 9 / 13 (69.2%)  
+**Status:** Phase 9 Complete ✅  
+**Last Updated:** November 11, 2025
 
 ---
 
@@ -70,95 +70,139 @@
 
 ---
 
+### Phase 4: Challenges (Retos) System ✅
+**Status:** COMPLETED  
+**Completion Date:** November 11, 2025
+
+**Deliverables:**
+- ✅ Complete Challenges API (GET, POST /start, /complete, /fail)
+- ✅ Daily challenges page with premium limits (1 free, 3 premium)
+- ✅ Focus mode with customizable timer (1 min - 23 hours)
+- ✅ Social challenges with invitation system
+- ✅ Visibilitychange tracking for honor system
+- ✅ Challenge completion flow with image upload
+- ✅ Rewards system (coins and streak)
+- ✅ Challenge timer component with interruption tracking
+- ✅ Image upload to Supabase Storage
+- ✅ Dashboard updated with active challenges
+
+**Files Created:** 14  
+**Lines of Code:** ~2,800
+
+---
+
+### Phase 5: Avatar CALI System ✅
+**Status:** COMPLETED  
+**Completion Date:** November 11, 2025
+
+**Deliverables:**
+- ✅ Complete Avatar API (GET, POST /avatar, POST /avatar/equip)
+- ✅ Avatar editor page with 6 categories
+- ✅ Avatar preview component with real-time updates
+- ✅ Category selector with grid layout
+- ✅ Energy level system (alta/media/baja) with visual indicators
+- ✅ Progressive unlock system based on challenges completed
+- ✅ Store purchase integration
+- ✅ Dashboard updated with avatar card
+- ✅ Energy updates on challenge completion
+- ✅ Free items initialization system
+
+**Files Created:** 8  
+**Lines of Code:** ~2,150
+
+---
+
+### Phase 6: In-App Currency & Store ✅
+**Status:** COMPLETED  
+**Completion Date:** November 11, 2025
+
+**Deliverables:**
+- ✅ Store API with advanced filters (category, price, premium, search)
+- ✅ Transactions API with history and totals
+- ✅ Store page with grid layout and filters
+- ✅ Transactions history page with summary cards
+- ✅ Store item card component with states
+- ✅ Store filters component
+- ✅ Purchase flow with validation
+- ✅ Dashboard updated with store access
+- ✅ Transaction logging system
+- ✅ Smart sorting (unowned items first)
+
+**Files Created:** 6  
+**Lines of Code:** ~1,500
+
+---
+
+### Phase 7: Social Feed & Profiles ✅
+**Status:** COMPLETED  
+**Completion Date:** November 11, 2025
+
+**Deliverables:**
+- ✅ Feed API with following/global filters
+- ✅ Likes API with optimistic updates
+- ✅ Comments API with notifications
+- ✅ Followers API (follow/unfollow)
+- ✅ Feed page with pagination
+- ✅ Feed post component with interactions
+- ✅ Public profile structure (base)
+- ✅ Dashboard updated with feed access
+- ✅ Social notifications system
+- ✅ Relative timestamps
+
+**Files Created:** 7  
+**Lines of Code:** ~1,550
+
+---
+
+### Phase 8: Stripe Subscriptions ✅
+**Status:** COMPLETED  
+**Completion Date:** November 11, 2025
+
+**Deliverables:**
+- ✅ Stripe SDK configuration (client + server)
+- ✅ Checkout API with session creation
+- ✅ Webhooks API (5 events handled)
+- ✅ Customer portal API
+- ✅ Pricing page with 2 plans ($4.99/month, $49.99/year)
+- ✅ Subscription management page
+- ✅ Success page with celebration
+- ✅ Dashboard updated with premium status
+- ✅ Secure payment processing
+- ✅ Subscription lifecycle management
+
+**Files Created:** 8  
+**Lines of Code:** ~1,680
+
+---
+
+### Phase 9: Notifications ✅
+**Status:** COMPLETED  
+**Completion Date:** November 11, 2025
+
+**Deliverables:**
+- ✅ Notifications API (GET/POST)
+- ✅ Mark as read API (individual + all)
+- ✅ Notification item component
+- ✅ Notification badge with polling
+- ✅ Notifications page with filters
+- ✅ 6 types of notifications supported
+- ✅ Dashboard integration
+- ✅ Real-time badge counter
+- ✅ Contextual links and actions
+- ✅ Empty states
+
+**Files Created:** 6  
+**Lines of Code:** ~1,650
+
+---
+
 ## 🚧 In Progress
 
-None currently. Ready for Phase 4.
+None currently. Ready for Phase 10.
 
 ---
 
 ## ⏳ Pending Phases
-
----
-
-### Phase 4: Challenges (Retos) System
-**Priority:** HIGH  
-**Status:** PENDING
-
-**Tasks:**
-- [ ] Design challenge data structure
-- [ ] Implement daily challenges (1 free, 3 premium)
-- [ ] Build focus mode with timer
-- [ ] Create social challenges system
-- [ ] Add visibilitychange tracking
-- [ ] Implement challenge completion flow
-- [ ] Build challenge history view
-
----
-
-### Phase 5: Avatar CALI System
-**Priority:** MEDIUM  
-**Status:** PENDING
-
-**Tasks:**
-- [ ] Design avatar composition system
-- [ ] Create base avatar editor UI
-- [ ] Implement energy levels (alta/media/baja)
-- [ ] Build category unlock system
-- [ ] Design initial avatar assets
-- [ ] Implement avatar preview
-- [ ] Add color customization
-
----
-
-### Phase 6: In-App Currency & Store
-**Priority:** MEDIUM  
-**Status:** PENDING
-
-**Tasks:**
-- [ ] Implement coin earning system
-- [ ] Build store UI
-- [ ] Create purchase flow
-- [ ] Add transaction logging
-- [ ] Implement item unlock logic
-- [ ] Design store items catalog
-- [ ] Add premium-only items
-
----
-
-### Phase 7: Social Feed & Profiles
-**Priority:** HIGH  
-**Status:** PENDING
-
-**Tasks:**
-- [ ] Design feed layout
-- [ ] Implement post creation (image + note)
-- [ ] Set up Supabase Storage for images
-- [ ] Add image upload/resize
-- [ ] Build follower system
-- [ ] Create public/private profiles
-- [ ] Implement feed pagination
-- [ ] Add like/comment functionality
-
----
-
-### Phase 8: Stripe Subscriptions
-**Priority:** MEDIUM  
-**Status:** PENDING
-
-**Tasks:**
-- [ ] Set up Stripe account
-- [ ] Create subscription plans (€2.99/month, €26.99/year)
-- [ ] Implement Stripe Checkout
-- [ ] Build webhook handler
-- [ ] Add coupon management
-- [ ] Create subscription status UI
-- [ ] Implement upgrade/downgrade flow
-
----
-
-### Phase 9: Notifications
-**Priority:** MEDIUM  
-**Status:** PENDING
 
 **Tasks:**
 - [ ] Implement in-app notification system
@@ -302,13 +346,13 @@ calixo/
 ## 📊 Statistics
 
 ### Code Metrics
-- **Total Files Created:** ~65
-- **Total Lines of Code:** ~4,981
-- **TypeScript Files:** 52
-- **React Components:** 13
+- **Total Files Created:** ~114
+- **Total Lines of Code:** ~16,311
+- **TypeScript Files:** 101
+- **React Components:** 25
 - **Server Actions:** 5
-- **API Routes:** 2
-- **Documentation Pages:** 12
+- **API Routes:** 27
+- **Documentation Pages:** 18
 - **SQL Files:** 2
 
 ### Dependencies
@@ -331,26 +375,26 @@ calixo/
 
 ## 🎯 Next Immediate Steps
 
-1. **Configure Database (If Not Done)**
-   - Create Supabase project at supabase.com
-   - Copy `DATABASE_URL` to `.env.local`
-   - Run `npm run db:push` to apply schema
-   - Execute `db/rls-policies.sql` in Supabase SQL Editor
-   - Run `npm run db:seed` to populate data
-
-2. **Test Current Features**
+1. **Test Phase 4 Features**
    - Start dev server: `npm run dev`
-   - Create a new account (profile auto-created)
-   - View dashboard with real data
-   - Edit profile information
-   - Verify data persistence
+   - Test daily challenges with timer
+   - Try focus mode with custom durations
+   - Create social challenges
+   - Verify visibilitychange tracking
+   - Complete a challenge and earn coins
 
-3. **Begin Phase 4: Challenges System**
-   - Design challenge API endpoints
-   - Implement daily challenges UI
-   - Build focus mode timer
-   - Create challenge completion flow
-   - Add reward system
+2. **Configure Supabase Storage (For Images)**
+   - Go to Supabase Dashboard > Storage
+   - Create bucket: `challenge-images`
+   - Set bucket to public
+   - Configure upload policies if needed
+
+3. **Begin Phase 5: Avatar CALI System**
+   - Design avatar composition system
+   - Create base avatar editor UI
+   - Implement energy levels (alta/media/baja)
+   - Build category unlock system
+   - Design initial avatar assets
 
 ---
 
@@ -399,6 +443,13 @@ npm run type-check # Check TypeScript types
 - **Setup Guide:** [SETUP_SUMMARY.md](./SETUP_SUMMARY.md)
 - **Phase 2 Summary:** [PHASE_2_SUMMARY.md](./PHASE_2_SUMMARY.md)
 - **Phase 3 Summary:** [PHASE_3_SUMMARY.md](./PHASE_3_SUMMARY.md)
+- **Phase 4 Summary:** [PHASE_4_SUMMARY.md](./PHASE_4_SUMMARY.md)
+- **Phase 5 Summary:** [PHASE_5_SUMMARY.md](./PHASE_5_SUMMARY.md)
+- **Phase 6 Summary:** [PHASE_6_SUMMARY.md](./PHASE_6_SUMMARY.md)
+- **Phase 7 Summary:** [PHASE_7_SUMMARY.md](./PHASE_7_SUMMARY.md)
+- **Phase 8 Summary:** [PHASE_8_SUMMARY.md](./PHASE_8_SUMMARY.md)
+- **Phase 9 Summary:** [PHASE_9_SUMMARY.md](./PHASE_9_SUMMARY.md)
+- **Progress Report:** [PROGRESS_REPORT.md](./PROGRESS_REPORT.md)
 - **Auth Implementation:** [docs/AUTH_IMPLEMENTATION.md](./docs/AUTH_IMPLEMENTATION.md)
 - **Database RLS Policies:** [db/rls-policies.sql](./db/rls-policies.sql)
 - **Project Requirements:** [docs/project_requirements_document.md](./docs/project_requirements_document.md)
@@ -479,8 +530,8 @@ For questions or issues:
 
 ---
 
-**Last Updated:** November 10, 2025  
+**Last Updated:** November 11, 2025  
 **Project Started:** November 6, 2025  
-**Phases Complete:** 3/13 (23.1%)  
+**Phases Complete:** 9/13 (69.2%)  
 **Status:** ✅ On Track
 
