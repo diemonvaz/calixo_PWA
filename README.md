@@ -8,7 +8,7 @@
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-purple)](https://stripe.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Estado del Proyecto:** 🚀 En Desarrollo Activo - **9/13 Fases Completadas (69.2%)**
+**Estado del Proyecto:** 🚀 En Desarrollo Activo - **10/13 Fases Completadas (76.9%)**
 
 ---
 
@@ -36,11 +36,10 @@ Calixo es una PWA (Progressive Web App) que ayuda a los usuarios a reducir su us
 - 🪙 **Sistema de monedas** y recompensas
 - 📊 **Tracking de progreso** y rachas
 
-### 🚧 En Desarrollo
+### 🚧 Pendiente
 - 👨‍💼 Panel de administración
-- 📱 PWA optimizada con offline mode
-- 📈 Analytics avanzados
-- 🧪 Testing automatizado
+- ♿ Accessibility & i18n
+- 🚀 CI/CD & Deployment
 
 ---
 

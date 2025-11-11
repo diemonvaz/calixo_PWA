@@ -81,12 +81,31 @@
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Mi Perfil",
-      "short_name": "Perfil",
-      "description": "Ver mi perfil y estadísticas",
-      "url": "/profile",
+      "name": "Feed Social",
+      "short_name": "Feed",
+      "description": "Ver el feed de retos completados",
+      "url": "/feed",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Tienda CALI",
+      "short_name": "Tienda",
+      "description": "Personaliza tu avatar CALI",
+      "url": "/store",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mi Avatar",
+      "short_name": "Avatar",
+      "description": "Editar mi avatar CALI",
+      "url": "/avatar",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
-  ]
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "scope": "/",
+  "lang": "es",
+  "dir": "ltr"
 }
 

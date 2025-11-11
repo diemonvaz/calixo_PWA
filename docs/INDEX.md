@@ -77,6 +77,13 @@ Resúmenes detallados de cada fase completada con estadísticas, archivos creado
   - 6 tipos de notificaciones
   - ~1,650 líneas de código
 
+- **[Fase 11: PWA Features](./phases/PHASE_11_SUMMARY.md)** ✅
+  - Service Worker completo
+  - Funcionalidad offline
+  - Install prompt
+  - Background sync
+  - ~1,375 líneas de código
+
 ---
 
 ### ⚙️ Setup (Configuración)
@@ -233,19 +240,20 @@ Documentos legacy y versiones anteriores.
 **Actualizado:** 11 de noviembre, 2025
 
 ```
-Fases Completadas:      9 / 13 (69.2%)
-Total Archivos:         ~114 archivos
-Líneas de Código:       ~16,311 líneas
-Componentes React:      25 componentes
+Fases Completadas:      10 / 13 (76.9%)
+Total Archivos:         ~124 archivos
+Líneas de Código:       ~17,686 líneas
+Componentes React:      27 componentes
 API Endpoints:          27 endpoints
-Documentos:             18 documentos
+Documentos:             20 documentos
+Iconos PWA:             8 iconos
 ```
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ Completado (Fases 1-9)
+### ✅ Completado (Fases 1-9, 11)
 - Setup del proyecto
 - Autenticación completa
 - Base de datos con RLS
@@ -255,12 +263,12 @@ Documentos:             18 documentos
 - Feed social
 - Subscripciones Stripe
 - Notificaciones
+- PWA completa (offline, install, sync)
 
-### 🚧 En Desarrollo (Próximamente)
+### 🚧 Pendiente
 - **Fase 10:** Panel Admin
-- **Fase 11:** PWA Optimización
-- **Fase 12:** Analytics
-- **Fase 13:** Testing & Deploy
+- **Fase 12:** Accessibility & i18n
+- **Fase 13:** CI/CD & Deployment
 
 ---
 
