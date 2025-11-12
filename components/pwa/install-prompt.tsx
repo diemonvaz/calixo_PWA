@@ -1,5 +1,7 @@
 'use client';
 
+import { ScreenReaderOnly } from '@/components/a11y/ScreenReaderOnly';
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -124,9 +126,11 @@ export function InstallPrompt() {
             <button
               onClick={handleDismiss}
               className="text-neutral-gray hover:text-dark-navy transition-colors"
-              aria-label="Cerrar"
+              aria-label="Cerrar prompt de instalación"
+              type="button"
             >
-              ✕
+              <ScreenReaderOnly>Cerrar</ScreenReaderOnly>
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
         </CardHeader>
@@ -174,4 +178,5 @@ export function InstallPrompt() {
     </div>
   );
 }
+
 

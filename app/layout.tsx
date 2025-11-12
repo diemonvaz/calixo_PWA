@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { SkipLink } from "@/components/a11y/SkipLink";
+import { Footer } from "@/components/layout/footer";
 
 export const metadata: Metadata = {
   title: "Calixo - Desconexión Digital",
@@ -37,10 +39,14 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
-      <body>
-        <ServiceWorkerRegister />
-        <InstallPrompt />
-        {children}
+      <body className="flex flex-col min-h-screen">
+        <SkipLink />
+        <div id="main-content" className="flex-1">
+          <ServiceWorkerRegister />
+          <InstallPrompt />
+          {children}
+        </div>
+        <Footer />
       </body>
     </html>
   );

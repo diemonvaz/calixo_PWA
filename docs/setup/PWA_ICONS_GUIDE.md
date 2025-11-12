@@ -243,3 +243,5 @@ Después de generar los iconos:
 **Última actualización:** 11 de noviembre de 2025  
 **Versión:** 1.0.0
 
+
+

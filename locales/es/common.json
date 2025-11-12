@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "feed": "Feed",
+    "challenges": "Retos",
+    "store": "Tienda",
+    "profile": "Perfil",
+    "dashboard": "Dashboard",
+    "notifications": "Notificaciones"
+  },
+  "challenges": {
+    "daily": "Retos Diarios",
+    "focus": "Modo Enfoque",
+    "social": "Retos Sociales",
+    "start": "Iniciar Reto",
+    "complete": "Completar",
+    "failed": "Fallido",
+    "inProgress": "En Progreso"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "noResults": "No se encontraron resultados"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "signup": "Registrarse",
+    "logout": "Cerrar Sesión",
+    "email": "Email",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "continueWithGoogle": "Continuar con Google"
+  },
+  "store": {
+    "title": "Tienda CALI",
+    "purchase": "Comprar",
+    "purchased": "Comprado",
+    "premiumOnly": "Solo Premium",
+    "price": "Precio",
+    "coins": "monedas"
+  },
+  "avatar": {
+    "title": "Mi Avatar CALI",
+    "energy": "Energía",
+    "high": "Alta",
+    "medium": "Media",
+    "low": "Baja",
+    "customize": "Personalizar"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todas como leídas",
+    "noNotifications": "No tienes notificaciones"
+  },
+  "admin": {
+    "title": "Panel de Administración",
+    "dashboard": "Dashboard",
+    "challenges": "Retos",
+    "users": "Usuarios",
+    "moderation": "Moderación",
+    "config": "Configuración",
+    "coupons": "Cupones",
+    "subscriptions": "Subscripciones",
+    "analytics": "Analytics"
+  }
+}
+
+

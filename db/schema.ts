@@ -203,3 +203,13 @@ export const reports = pgTable('reports', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Contacts table (for newsletter subscriptions)
+export const contacts = pgTable('contacts', {
+  id: serial('id').primaryKey(),
+  email: text('email').unique().notNull(),
+  subscribed: boolean('subscribed').default(true).notNull(),
+  source: text('source').default('newsletter'), // newsletter, contact_form, etc.
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
