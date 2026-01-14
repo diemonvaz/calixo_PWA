@@ -78,18 +78,10 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-          
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Mi Subscripción
           </h1>
@@ -161,7 +153,7 @@ export default function SubscriptionPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/')}
               >
                 Continuar con Gratuito
               </Button>

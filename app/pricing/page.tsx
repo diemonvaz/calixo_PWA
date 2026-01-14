@@ -92,22 +92,14 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-6"
-          >
-            ← Volver
-          </Button>
-
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Desbloquea todo el potencial de CALI ✨
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Desbloquea todo el potencial de CALI
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600">
             Lleva tu desconexión digital al siguiente nivel con funciones premium exclusivas
           </p>
         </div>
@@ -193,7 +185,7 @@ export default function PricingPage() {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/')}
               >
                 Plan Actual
               </Button>

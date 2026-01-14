@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { notifications } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * POST /api/notifications/read-all
@@ -10,7 +7,7 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -21,18 +18,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Update all unseen notifications
-    await db
-      .update(notifications)
-      .set({ 
-        seen: true,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(notifications.userId, user.id),
-          eq(notifications.seen, false)
-        )
-      );
+    const { error: updateError } = await supabase
+      .from('notifications')
+      .update({ seen: true })
+      .eq('user_id', user.id)
+      .eq('seen', false);
+
+    if (updateError) {
+      throw updateError;
+    }
 
     return NextResponse.json({
       success: true,

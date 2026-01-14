@@ -5,10 +5,10 @@ import { z } from 'zod';
  */
 
 export const loginSchema = z.object({
-  email: z
+  emailOrUsername: z
     .string()
-    .min(1, 'El correo electrónico es requerido')
-    .email('Correo electrónico inválido'),
+    .min(1, 'El correo electrónico o nombre de usuario es requerido')
+    .min(3, 'Debe tener al menos 3 caracteres'),
   password: z
     .string()
     .min(1, 'La contraseña es requerida')
@@ -35,7 +35,8 @@ export const signupSchema = z
     displayName: z
       .string()
       .min(3, 'El nombre debe tener al menos 3 caracteres')
-      .max(50, 'El nombre no puede tener más de 50 caracteres'),
+      .max(50, 'El nombre no puede tener más de 50 caracteres')
+      .regex(/^\S+$/, 'El nombre de usuario no puede contener espacios'),
     acceptTerms: z
       .boolean()
       .refine((val) => val === true, {

@@ -102,16 +102,8 @@ export default function TransactionsPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/store')}
-            className="mb-4"
-          >
-            ← Volver a Tienda
-          </Button>
-          
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            📊 Historial de Transacciones
+            Historial de Transacciones
           </h1>
           <p className="text-gray-600">
             Todas tus monedas ganadas y gastadas

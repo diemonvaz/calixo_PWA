@@ -1,9 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 /**
  * Create a Supabase client for server-side operations
  * This client is used in Server Components, Server Actions, and Route Handlers
+ * Uses the authenticated user's session
  */
 export async function createClient() {
   const cookieStore = await cookies();
@@ -27,6 +29,27 @@ export async function createClient() {
             // user sessions.
           }
         },
+      },
+    }
+  );
+}
+
+/**
+ * Create a Supabase client with service role key for admin operations
+ * Bypasses RLS policies - use with caution!
+ */
+export function createServiceRoleClient() {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
+  }
+
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     }
   );

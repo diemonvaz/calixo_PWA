@@ -10,11 +10,11 @@ export default function AvisoLegalPage() {
   return (
     <main className="container mx-auto px-4 py-12 max-w-4xl">
       <div className="card">
-        <h1 className="text-3xl font-bold text-dark-navy mb-6">Aviso Legal</h1>
+        <h1 className="text-3xl font-bold text-text-dark font-serif mb-6">Aviso Legal</h1>
         
-        <div className="prose prose-slate max-w-none space-y-6 text-neutral-gray">
+        <div className="prose prose-slate max-w-none space-y-6 text-neutral">
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">1. Datos Identificativos</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">1. Datos Identificativos</h2>
             <p>
               En cumplimiento con el deber de información recogido en artículo 10 de la Ley 34/2002, 
               de 11 de julio, de Servicios de la Sociedad de la Información y del Comercio Electrónico, 
@@ -31,7 +31,7 @@ export default function AvisoLegalPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">2. Objeto</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">2. Objeto</h2>
             <p>
               El presente aviso legal regula el uso del sitio web <strong>calixo.com</strong> (en adelante, 
               el "Sitio Web"), propiedad de CALIXO SL (en adelante, el "Titular").
@@ -44,7 +44,7 @@ export default function AvisoLegalPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">3. Condiciones de Uso</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">3. Condiciones de Uso</h2>
             <p>
               El acceso y uso del Sitio Web se rige por la legalidad vigente y por el principio de buena 
               fe comprometiéndose el usuario a realizar un buen uso de la web. No se permite el uso del 
@@ -67,7 +67,7 @@ export default function AvisoLegalPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">4. Propiedad Intelectual e Industrial</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">4. Propiedad Intelectual e Industrial</h2>
             <p>
               Todos los contenidos del Sitio Web, incluyendo, a título enunciativo, los textos, fotografías, gráficos, 
               imágenes, iconos, tecnología, software, así como su diseño gráfico y códigos fuente, constituyen una obra 
@@ -82,7 +82,7 @@ export default function AvisoLegalPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">5. Responsabilidad</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">5. Responsabilidad</h2>
             <p>
               CALIXO SL no se hace responsable de la información y contenidos almacenados en foros, chats, generadores 
               de blogs, comentarios, redes sociales o cualquier otro medio que permita a terceros publicar contenidos de 
@@ -101,7 +101,7 @@ export default function AvisoLegalPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">6. Modificaciones</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">6. Modificaciones</h2>
             <p>
               CALIXO SL se reserva el derecho de efectuar sin previo aviso las modificaciones que considere oportunas en 
               su portal, pudiendo cambiar, suprimir o añadir tanto los contenidos y servicios que se presten a través de la 
@@ -110,7 +110,7 @@ export default function AvisoLegalPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">7. Enlaces</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">7. Enlaces</h2>
             <p>
               En el caso de que en el Sitio Web se dispusiesen enlaces o hipervínculos hacía otros sitios de Internet, 
               CALIXO SL no ejercerá ningún tipo de control sobre dichos sitios y contenidos. En ningún caso CALIXO SL 
@@ -122,7 +122,7 @@ export default function AvisoLegalPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">8. Legislación Aplicable y Jurisdicción</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">8. Legislación Aplicable y Jurisdicción</h2>
             <p>
               Para la resolución de todas las controversias o cuestiones relacionadas con el presente sitio web o de 
               las actividades en él desarrolladas, será de aplicación la legislación española, a la que se someten 
@@ -132,7 +132,7 @@ export default function AvisoLegalPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">9. Contacto</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">9. Contacto</h2>
             <p>
               Para cualquier consulta o comunicación relacionada con este Aviso Legal, puede contactarnos a través de:
             </p>
@@ -143,14 +143,6 @@ export default function AvisoLegalPage() {
           </section>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-neutral-gray/20">
-          <Link 
-            href="/" 
-            className="text-soft-blue hover:underline font-medium"
-          >
-            ← Volver al inicio
-          </Link>
-        </div>
       </div>
     </main>
   );

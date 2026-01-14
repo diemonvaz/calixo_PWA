@@ -29,8 +29,8 @@ export function NotificationBadge() {
   if (unseenCount === 0) return null;
 
   return (
-    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-      {unseenCount > 9 ? '9+' : unseenCount}
+    <span className="absolute -top-1 -right-1 bg-gradient-to-br from-primary to-primary-dark text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1.5 shadow-lg ring-2 ring-white/95 leading-none">
+      {unseenCount > 99 ? '99+' : unseenCount > 9 ? '9+' : unseenCount}
     </span>
   );
 }

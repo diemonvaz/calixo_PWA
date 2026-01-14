@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { ChallengeTimer } from '@/components/challenges/challenge-timer';
 import { ChallengeCompletionForm } from '@/components/challenges/challenge-completion-form';
+import { ChallengeSuccessModal } from '@/components/challenges/challenge-success-modal';
+import { useToast } from '@/components/ui/toast';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Challenge {
   id: number;
@@ -25,6 +28,8 @@ interface SessionData {
 
 export default function FocusModePage() {
   const router = useRouter();
+  const toast = useToast();
+  const confirmDialog = useConfirmDialog();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,7 +40,12 @@ export default function FocusModePage() {
   const [userChallengeId, setUserChallengeId] = useState<number | null>(null);
   const [showTimer, setShowTimer] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [completionData, setCompletionData] = useState<{
+    coinsEarned: number;
+    feedItemId?: number;
+  } | null>(null);
 
   useEffect(() => {
     fetchChallenges();
@@ -62,7 +72,10 @@ export default function FocusModePage() {
   };
 
   const handleStartFocus = async () => {
-    if (!selectedChallenge) return;
+    if (!selectedChallenge || !selectedChallenge.id) {
+      setError('Error: Reto inválido');
+      return;
+    }
 
     // Validate duration (max 23 hours)
     if (customDuration > 23 * 60) {
@@ -76,6 +89,7 @@ export default function FocusModePage() {
     }
 
     try {
+      console.log('Starting focus challenge:', selectedChallenge.id, 'duration:', customDuration);
       const response = await fetch('/api/challenges/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,14 +100,16 @@ export default function FocusModePage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Error al iniciar el reto');
+        const data = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        console.error('Error response:', data);
+        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
       setUserChallengeId(data.userChallenge.id);
       setShowTimer(true);
     } catch (err) {
+      console.error('Error starting focus challenge:', err);
       setError(err instanceof Error ? err.message : 'Error al iniciar el reto');
     }
   };
@@ -118,7 +134,7 @@ export default function FocusModePage() {
         }),
       });
 
-      alert(`❌ Reto fallido: ${reason}\n\nNo te preocupes, puedes intentarlo de nuevo.`);
+      toast.error(`Reto fallido: ${reason}. No te preocupes, puedes intentarlo de nuevo.`, 6000);
       resetState();
       fetchChallenges();
     } catch (err) {
@@ -127,9 +143,33 @@ export default function FocusModePage() {
   };
 
   const handleChallengeCancel = () => {
-    if (confirm('¿Estás seguro de que quieres cancelar este reto de enfoque?')) {
-      resetState();
-    }
+    confirmDialog.confirm({
+      title: 'Cancelar reto',
+      message: '¿Estás seguro de que quieres cancelar este reto de enfoque?',
+      confirmText: 'Sí, cancelar',
+      cancelText: 'No, continuar',
+      confirmVariant: 'destructive',
+      onConfirm: async () => {
+        if (!userChallengeId) {
+          resetState();
+          return;
+        }
+
+        try {
+          await fetch('/api/challenges/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userChallengeId }),
+          });
+          toast.info('Reto cancelado');
+        } catch (err) {
+          console.error('Error al cancelar el reto:', err);
+          toast.error('Error al cancelar el reto');
+        } finally {
+          resetState();
+        }
+      },
+    });
   };
 
   const handleSubmitCompletion = async (imageUrl: string, note: string) => {
@@ -152,9 +192,16 @@ export default function FocusModePage() {
       }
 
       const data = await response.json();
-      alert(`🎉 ¡Reto completado! Ganaste ${data.coinsEarned} monedas`);
-      resetState();
-      router.push('/dashboard');
+      
+      // Hide completion form and show success modal
+      setShowCompletion(false);
+      setCompletionData({
+        coinsEarned: data.coinsEarned,
+        feedItemId: data.feedItem?.id,
+      });
+      setShowSuccessModal(true);
+      
+      toast.success(`¡Reto completado! Ganaste ${data.coinsEarned} monedas`, 5000);
     } catch (err) {
       throw err;
     }
@@ -164,7 +211,7 @@ export default function FocusModePage() {
     if (!userChallengeId || !sessionData) return;
 
     try {
-      await fetch('/api/challenges/complete', {
+      const response = await fetch('/api/challenges/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -173,9 +220,24 @@ export default function FocusModePage() {
         }),
       });
 
-      router.push('/dashboard');
+      if (!response.ok) {
+        throw new Error('Error al completar el reto');
+      }
+
+      const data = await response.json();
+      
+      // Hide completion form and show success modal
+      setShowCompletion(false);
+      setCompletionData({
+        coinsEarned: data.coinsEarned,
+        feedItemId: data.feedItem?.id,
+      });
+      setShowSuccessModal(true);
+      
+      toast.success(`¡Reto completado! Ganaste ${data.coinsEarned} monedas`, 5000);
     } catch (err) {
       console.error('Error:', err);
+      toast.error('Error al completar el reto');
     }
   };
 
@@ -184,8 +246,16 @@ export default function FocusModePage() {
     setUserChallengeId(null);
     setShowTimer(false);
     setShowCompletion(false);
+    setShowSuccessModal(false);
     setSessionData(null);
+    setCompletionData(null);
     setCustomDuration(60);
+  };
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    resetState();
+    fetchChallenges();
   };
 
   const formatDuration = (minutes: number) => {
@@ -224,33 +294,50 @@ export default function FocusModePage() {
 
   if (showCompletion && selectedChallenge) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <ChallengeCompletionForm
-          challengeTitle={selectedChallenge.title}
-          coinsEarned={selectedChallenge.reward}
-          onSubmit={handleSubmitCompletion}
-          onSkip={handleSkipCompletion}
-        />
-      </div>
+      <>
+        {/* Success Modal - Show on top of completion form */}
+        {showSuccessModal && completionData && (
+          <ChallengeSuccessModal
+            isOpen={showSuccessModal}
+            challengeTitle={selectedChallenge.title}
+            coinsEarned={completionData.coinsEarned}
+            feedItemId={completionData.feedItemId}
+            onClose={handleCloseSuccessModal}
+          />
+        )}
+        <div className="min-h-screen bg-gray-50 py-8 px-4">
+          <ChallengeCompletionForm
+            challengeTitle={selectedChallenge.title}
+            coinsEarned={selectedChallenge.reward}
+            onSubmit={handleSubmitCompletion}
+            onSkip={handleSkipCompletion}
+          />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-          
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            🎯 Modo Enfoque
-          </h1>
+    <>
+      {/* Success Modal */}
+      {showSuccessModal && selectedChallenge && completionData && (
+        <ChallengeSuccessModal
+          isOpen={showSuccessModal}
+          challengeTitle={selectedChallenge.title}
+          coinsEarned={completionData.coinsEarned}
+          feedItemId={completionData.feedItemId}
+          onClose={handleCloseSuccessModal}
+        />
+      )}
+
+      {/* Main Content */}
+      <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Modo Enfoque
+            </h1>
           <p className="text-gray-600">
             Concéntrate sin distracciones en lo que realmente importa
           </p>
@@ -388,6 +475,7 @@ export default function FocusModePage() {
         )}
       </div>
     </div>
+    </>
   );
 }
 

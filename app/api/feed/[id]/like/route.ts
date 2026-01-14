@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { feedItems, notifications } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * POST /api/feed/[id]/like
@@ -10,10 +7,10 @@ import { eq } from 'drizzle-orm';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -23,16 +20,17 @@ export async function POST(
       );
     }
 
-    const feedItemId = parseInt(params.id);
+    const { id } = await params;
+    const feedItemId = parseInt(id);
 
     // Get the feed item
-    const [feedItem] = await db
-      .select()
-      .from(feedItems)
-      .where(eq(feedItems.id, feedItemId))
-      .limit(1);
+    const { data: feedItem, error: feedError } = await supabase
+      .from('feed_items')
+      .select('*')
+      .eq('id', feedItemId)
+      .single();
 
-    if (!feedItem) {
+    if (feedError || !feedItem) {
       return NextResponse.json(
         { error: 'Post no encontrado' },
         { status: 404 }
@@ -41,25 +39,30 @@ export async function POST(
 
     // For simplicity, we increment/decrement likes count
     // In a real app, you'd have a separate likes table
-    const newLikesCount = feedItem.likesCount + 1;
+    const newLikesCount = (feedItem.likes_count || 0) + 1;
 
-    await db
-      .update(feedItems)
-      .set({ likesCount: newLikesCount })
-      .where(eq(feedItems.id, feedItemId));
+    const { error: updateError } = await supabase
+      .from('feed_items')
+      .update({ likes_count: newLikesCount })
+      .eq('id', feedItemId);
+
+    if (updateError) {
+      throw updateError;
+    }
 
     // Create notification for post owner (if not own post)
-    if (feedItem.userId !== user.id) {
-      await db.insert(notifications).values({
-        userId: feedItem.userId,
+    if (feedItem.user_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: feedItem.user_id,
         type: 'social',
+        title: 'Nuevo like',
+        message: 'A alguien le gustó tu post',
         payload: {
           type: 'feed_like',
           feedItemId: feedItem.id,
           likerId: user.id,
         },
         seen: false,
-        createdAt: new Date(),
       });
     }
 

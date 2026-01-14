@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { StoreItemCard } from '@/components/store/store-item-card';
 import { StoreFilters } from '@/components/store/store-filters';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/toast';
 
 interface StoreItem {
   id: number;
@@ -31,6 +32,7 @@ interface StoreData {
 
 export default function StorePage() {
   const router = useRouter();
+  const toast = useToast();
   const [storeData, setStoreData] = useState<StoreData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -85,7 +87,7 @@ export default function StorePage() {
       }
 
       const data = await response.json();
-      alert(`✅ ¡${data.item.name} comprado! -${data.item.price} monedas`);
+      toast.success(`¡${data.item.name} comprado! -${data.item.price} monedas`);
       
       // Refresh store data
       await fetchStoreData();
@@ -120,21 +122,13 @@ export default function StorePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-          
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                🏪 Tienda CALI
+                Tienda CALI
               </h1>
               <p className="text-gray-600">
                 Personaliza tu avatar con items únicos

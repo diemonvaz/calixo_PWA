@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { notifications } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * POST /api/notifications/[id]/read
@@ -10,10 +7,10 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -23,24 +20,19 @@ export async function POST(
       );
     }
 
-    const notificationId = parseInt(params.id);
+    const { id } = await params;
+    const notificationId = parseInt(id);
 
     // Update notification
-    const [updated] = await db
-      .update(notifications)
-      .set({ 
-        seen: true,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(notifications.id, notificationId),
-          eq(notifications.userId, user.id)
-        )
-      )
-      .returning();
+    const { data: updated, error: updateError } = await supabase
+      .from('notifications')
+      .update({ seen: true })
+      .eq('id', notificationId)
+      .eq('user_id', user.id)
+      .select()
+      .single();
 
-    if (!updated) {
+    if (updateError || !updated) {
       return NextResponse.json(
         { error: 'Notificación no encontrada' },
         { status: 404 }
@@ -49,7 +41,16 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      notification: updated,
+      notification: {
+        id: updated.id,
+        userId: updated.user_id,
+        type: updated.type,
+        title: updated.title,
+        message: updated.message,
+        payload: updated.payload,
+        seen: updated.seen,
+        createdAt: updated.created_at,
+      },
     });
   } catch (error) {
     console.error('Error marking notification as read:', error);

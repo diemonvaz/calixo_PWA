@@ -19,7 +19,7 @@ const couponUpdateSchema = z.object({
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const isAdmin = await requireAdmin();
@@ -27,7 +27,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const couponId = parseInt(params.id);
+    const { id } = await params;
+    const couponId = parseInt(id);
     if (isNaN(couponId)) {
       return NextResponse.json({ error: 'Invalid coupon ID' }, { status: 400 });
     }
@@ -74,7 +75,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const isAdmin = await requireAdmin();
@@ -82,7 +83,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const couponId = parseInt(params.id);
+    const { id } = await params;
+    const couponId = parseInt(id);
     if (isNaN(couponId)) {
       return NextResponse.json({ error: 'Invalid coupon ID' }, { status: 400 });
     }

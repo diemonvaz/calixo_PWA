@@ -1,8 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { feedItems, notifications } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
+
+/**
+ * GET /api/feed/[id]/comments
+ * Get comments for a feed post
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    const feedItemId = parseInt(id);
+
+    // Get comments
+    const { data: comments, error: commentsError } = await supabase
+      .from('feed_comments')
+      .select('*')
+      .eq('feed_item_id', feedItemId)
+      .order('created_at', { ascending: false });
+
+    if (commentsError) {
+      throw commentsError;
+    }
+
+    // Get user info for each comment
+    const userIds = [...new Set((comments || []).map((c: any) => c.user_id))];
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .in('id', userIds);
+
+    const usersMap = new Map((users || []).map((u: any) => [u.id, u.display_name]));
+
+    // Format comments
+    const formattedComments = (comments || []).map((comment: any) => ({
+      id: comment.id,
+      comment: comment.comment,
+      userId: comment.user_id,
+      displayName: usersMap.get(comment.user_id) || 'Usuario',
+      createdAt: comment.created_at,
+    }));
+
+    return NextResponse.json({
+      comments: formattedComments,
+    });
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener comentarios' },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * POST /api/feed/[id]/comments
@@ -10,10 +70,10 @@ import { eq } from 'drizzle-orm';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -33,36 +93,64 @@ export async function POST(
       );
     }
 
-    const feedItemId = parseInt(params.id);
+    const { id } = await params;
+    const feedItemId = parseInt(id);
 
     // Get the feed item
-    const [feedItem] = await db
-      .select()
-      .from(feedItems)
-      .where(eq(feedItems.id, feedItemId))
-      .limit(1);
+    const { data: feedItem, error: feedError } = await supabase
+      .from('feed_items')
+      .select('*')
+      .eq('id', feedItemId)
+      .single();
 
-    if (!feedItem) {
+    if (feedError || !feedItem) {
       return NextResponse.json(
         { error: 'Post no encontrado' },
         { status: 404 }
       );
     }
 
-    // For simplicity, we just increment comments count
-    // In a real app, you'd have a separate comments table
-    const newCommentsCount = feedItem.commentsCount + 1;
+    // Insert comment
+    const { data: newComment, error: insertError } = await supabase
+      .from('feed_comments')
+      .insert({
+        feed_item_id: feedItemId,
+        user_id: user.id,
+        comment: comment.trim(),
+      })
+      .select('*')
+      .single();
 
-    await db
-      .update(feedItems)
-      .set({ commentsCount: newCommentsCount })
-      .where(eq(feedItems.id, feedItemId));
+    if (insertError) {
+      throw insertError;
+    }
+
+    // Get user display name
+    const { data: userData } = await supabase
+      .from('users')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+
+    // Update comments count
+    const newCommentsCount = (feedItem.comments_count || 0) + 1;
+    const { error: updateError } = await supabase
+      .from('feed_items')
+      .update({ comments_count: newCommentsCount })
+      .eq('id', feedItemId);
+
+    if (updateError) {
+      console.error('Error updating comments count:', updateError);
+      // Don't fail the request if count update fails
+    }
 
     // Create notification for post owner (if not own post)
-    if (feedItem.userId !== user.id) {
-      await db.insert(notifications).values({
-        userId: feedItem.userId,
+    if (feedItem.user_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: feedItem.user_id,
         type: 'social',
+        title: 'Nuevo comentario',
+        message: 'Alguien comentó en tu post',
         payload: {
           type: 'feed_comment',
           feedItemId: feedItem.id,
@@ -70,13 +158,22 @@ export async function POST(
           comment: comment.substring(0, 100), // Preview
         },
         seen: false,
-        createdAt: new Date(),
       });
     }
+
+    // Format the new comment
+    const formattedComment = {
+      id: newComment.id,
+      comment: newComment.comment,
+      userId: newComment.user_id,
+      displayName: userData?.display_name || 'Usuario',
+      createdAt: newComment.created_at,
+    };
 
     return NextResponse.json({
       success: true,
       commentsCount: newCommentsCount,
+      comment: formattedComment,
     });
   } catch (error) {
     console.error('Error commenting on post:', error);

@@ -16,7 +16,7 @@ export function ModeToggle({ currentRole }: ModeToggleProps) {
   // Only show toggle if user is admin (can switch to moderator mode)
   if (currentRole !== 'admin') {
     return (
-      <div className="px-4 py-2 bg-neutral-gray/10 rounded-lg text-sm text-neutral-gray">
+      <div className="px-4 py-2 bg-neutral/10 rounded-lg text-sm text-neutral">
         Modo Moderador
       </div>
     );
@@ -24,13 +24,13 @@ export function ModeToggle({ currentRole }: ModeToggleProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-neutral-gray mr-2">Modo:</span>
-      <div className="flex bg-neutral-gray/10 rounded-lg p-1">
+      <span className="text-sm text-neutral mr-2">Modo:</span>
+      <div className="flex bg-neutral/10 rounded-lg p-1">
         <Button
           variant={mode === 'admin' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setMode('admin')}
-          className={mode === 'admin' ? 'bg-soft-blue text-white' : ''}
+          className={mode === 'admin' ? 'bg-primary text-white' : ''}
         >
           Admin
         </Button>
@@ -38,7 +38,7 @@ export function ModeToggle({ currentRole }: ModeToggleProps) {
           variant={mode === 'moderator' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setMode('moderator')}
-          className={mode === 'moderator' ? 'bg-soft-blue text-white' : ''}
+          className={mode === 'moderator' ? 'bg-primary text-white' : ''}
         >
           Moderador
         </Button>

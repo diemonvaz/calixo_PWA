@@ -74,7 +74,7 @@ export function ConfigForm() {
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-neutral-gray">Cargando...</div>;
+    return <div className="text-center py-8 text-neutral">Cargando...</div>;
   }
 
   return (
@@ -93,7 +93,7 @@ export function ConfigForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-dark-navy mb-2">
+            <label className="block text-sm font-medium text-text-dark mb-2">
               Límite Retos Diarios (Free)
             </label>
             <input
@@ -102,13 +102,13 @@ export function ConfigForm() {
               onChange={(e) =>
                 setConfig({ ...config, daily_free_challenges: parseInt(e.target.value) || 1 })
               }
-              className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+              className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               min={1}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-dark-navy mb-2">
+            <label className="block text-sm font-medium text-text-dark mb-2">
               Límite Retos Diarios (Premium)
             </label>
             <input
@@ -117,13 +117,13 @@ export function ConfigForm() {
               onChange={(e) =>
                 setConfig({ ...config, daily_premium_challenges: parseInt(e.target.value) || 3 })
               }
-              className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+              className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               min={1}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-dark-navy mb-2">
+            <label className="block text-sm font-medium text-text-dark mb-2">
               Recompensa Retos Diarios (monedas)
             </label>
             <input
@@ -132,13 +132,13 @@ export function ConfigForm() {
               onChange={(e) =>
                 setConfig({ ...config, reward_daily: parseInt(e.target.value) || 50 })
               }
-              className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+              className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               min={0}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-dark-navy mb-2">
+            <label className="block text-sm font-medium text-text-dark mb-2">
               Recompensa Modo Enfoque (monedas/minuto)
             </label>
             <input
@@ -147,13 +147,13 @@ export function ConfigForm() {
               onChange={(e) =>
                 setConfig({ ...config, reward_focus: parseInt(e.target.value) || 1 })
               }
-              className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+              className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               min={0}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-dark-navy mb-2">
+            <label className="block text-sm font-medium text-text-dark mb-2">
               Recompensa Retos Sociales (monedas)
             </label>
             <input
@@ -162,13 +162,13 @@ export function ConfigForm() {
               onChange={(e) =>
                 setConfig({ ...config, reward_social: parseInt(e.target.value) || 75 })
               }
-              className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+              className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               min={0}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-dark-navy mb-2">
+            <label className="block text-sm font-medium text-text-dark mb-2">
               Duración Máxima Modo Enfoque (minutos)
             </label>
             <input
@@ -177,7 +177,7 @@ export function ConfigForm() {
               onChange={(e) =>
                 setConfig({ ...config, max_focus_duration_minutes: parseInt(e.target.value) || 1380 })
               }
-              className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+              className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               min={1}
               max={1380}
             />

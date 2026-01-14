@@ -16,7 +16,7 @@ const resolveSchema = z.object({
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const isModerator = await requireModerator();
@@ -24,7 +24,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const reportId = parseInt(params.id);
+    const { id } = await params;
+    const reportId = parseInt(id);
     if (isNaN(reportId)) {
       return NextResponse.json({ error: 'Invalid report ID' }, { status: 400 });
     }

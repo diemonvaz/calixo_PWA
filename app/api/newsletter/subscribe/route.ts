@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { contacts } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const subscribeSchema = z.object({
@@ -10,23 +8,28 @@ const subscribeSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
     const body = await request.json();
     const { email } = subscribeSchema.parse(body);
 
     // Verificar si el email ya existe
-    const existingContact = await db
-      .select()
-      .from(contacts)
-      .where(eq(contacts.email, email.toLowerCase()))
-      .limit(1);
+    const { data: existingContact } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
 
-    if (existingContact.length > 0) {
+    if (existingContact) {
       // Si ya existe pero no está suscrito, actualizar
-      if (!existingContact[0].subscribed) {
-        await db
-          .update(contacts)
-          .set({ subscribed: true, updatedAt: new Date() })
-          .where(eq(contacts.email, email.toLowerCase()));
+      if (!existingContact.subscribed) {
+        const { error: updateError } = await supabase
+          .from('contacts')
+          .update({ subscribed: true, updated_at: new Date().toISOString() })
+          .eq('email', email.toLowerCase());
+
+        if (updateError) {
+          throw updateError;
+        }
 
         return NextResponse.json(
           { message: 'Te has vuelto a suscribir correctamente' },
@@ -41,11 +44,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear nuevo contacto
-    await db.insert(contacts).values({
-      email: email.toLowerCase(),
-      subscribed: true,
-      source: 'newsletter',
-    });
+    const { error: insertError } = await supabase
+      .from('contacts')
+      .insert({
+        email: email.toLowerCase(),
+        subscribed: true,
+        source: 'newsletter',
+      });
+
+    if (insertError) {
+      throw insertError;
+    }
 
     return NextResponse.json(
       { message: 'Te has suscrito correctamente a nuestra newsletter' },

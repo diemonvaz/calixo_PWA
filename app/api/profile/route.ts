@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { db, profiles } from '@/db';
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 // Schema for updating profile
@@ -13,6 +11,7 @@ const updateProfileSchema = z.object({
 /**
  * GET /api/profile
  * Get the current user's profile
+ * Creates profile automatically if it doesn't exist
  */
 export async function GET() {
   try {
@@ -26,31 +25,58 @@ export async function GET() {
       );
     }
 
-    // Get profile from database
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.userId, user.id))
-      .limit(1);
+    // Get user from database using Supabase
+    let { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
 
-    if (!profile) {
-      return NextResponse.json(
-        { error: 'Perfil no encontrado' },
-        { status: 404 }
-      );
+    // If user doesn't exist, create it automatically
+    if (userError || !userData) {
+      // Get display name from user metadata or use email prefix as fallback
+      const displayName = 
+        (user.user_metadata?.display_name as string) ||
+        user.email?.split('@')[0] ||
+        'Usuario';
+
+      // Create user
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          display_name: displayName,
+          avatar_energy: 100,
+          is_private: false,
+          is_premium: false,
+          coins: 0,
+          streak: 0,
+        })
+        .select()
+        .single();
+
+      if (createError || !newUser) {
+        console.error('Error creating user:', createError);
+        return NextResponse.json(
+          { error: 'Error al crear el usuario' },
+          { status: 500 }
+        );
+      }
+
+      userData = newUser;
     }
 
     return NextResponse.json({
       profile: {
-        userId: profile.userId,
-        displayName: profile.displayName,
-        avatarEnergy: profile.avatarEnergy,
-        isPrivate: profile.isPrivate,
-        isPremium: profile.isPremium,
-        coins: profile.coins,
-        streak: profile.streak,
-        createdAt: profile.createdAt,
-        updatedAt: profile.updatedAt,
+        userId: userData.id,
+        displayName: userData.display_name,
+        avatarEnergy: userData.avatar_energy,
+        isPrivate: userData.is_private,
+        isPremium: userData.is_premium,
+        coins: userData.coins,
+        streak: userData.streak,
+        createdAt: userData.created_at,
+        updatedAt: userData.updated_at,
       }
     });
   } catch (error) {
@@ -88,19 +114,24 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updateData = validatedFields.data;
+    const updateData: Record<string, any> = {};
+    if (validatedFields.data.displayName !== undefined) {
+      updateData.display_name = validatedFields.data.displayName;
+    }
+    if (validatedFields.data.isPrivate !== undefined) {
+      updateData.is_private = validatedFields.data.isPrivate;
+    }
+    updateData.updated_at = new Date().toISOString();
 
-    // Update profile
-    const [updatedProfile] = await db
-      .update(profiles)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(eq(profiles.userId, user.id))
-      .returning();
+    // Update user using Supabase
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', user.id)
+      .select()
+      .single();
 
-    if (!updatedProfile) {
+    if (updateError || !updatedUser) {
       return NextResponse.json(
         { error: 'Error al actualizar el perfil' },
         { status: 500 }
@@ -110,14 +141,14 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({
       message: 'Perfil actualizado exitosamente',
       profile: {
-        userId: updatedProfile.userId,
-        displayName: updatedProfile.displayName,
-        avatarEnergy: updatedProfile.avatarEnergy,
-        isPrivate: updatedProfile.isPrivate,
-        isPremium: updatedProfile.isPremium,
-        coins: updatedProfile.coins,
-        streak: updatedProfile.streak,
-        updatedAt: updatedProfile.updatedAt,
+        userId: updatedUser.id,
+        displayName: updatedUser.display_name,
+        avatarEnergy: updatedUser.avatar_energy,
+        isPrivate: updatedUser.is_private,
+        isPremium: updatedUser.is_premium,
+        coins: updatedUser.coins,
+        streak: updatedUser.streak,
+        updatedAt: updatedUser.updated_at,
       }
     });
   } catch (error) {

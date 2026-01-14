@@ -55,14 +55,14 @@ export function NewsletterForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={status === 'loading'}
-          className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-neutral-gray/60 focus:bg-white/20"
+          className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-neutral/60 focus:bg-white/20"
           required
           aria-label="Email para newsletter"
         />
         <Button
           type="submit"
           disabled={status === 'loading'}
-          className="bg-soft-blue hover:bg-soft-blue-dark text-white px-6"
+          className="bg-primary hover:bg-primary-dark text-white px-6"
         >
           {status === 'loading' ? '...' : 'Suscribir'}
         </Button>
@@ -72,10 +72,10 @@ export function NewsletterForm() {
         <p
           className={`text-sm ${
             status === 'success'
-              ? 'text-accent-green'
+              ? 'text-complementary-emerald'
               : status === 'error'
               ? 'text-accent-red'
-              : 'text-neutral-gray'
+              : 'text-neutral'
           }`}
           role="status"
           aria-live="polite"

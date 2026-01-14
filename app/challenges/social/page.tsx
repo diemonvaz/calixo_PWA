@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 
 interface Challenge {
   id: number;
@@ -27,6 +28,7 @@ interface SocialSession {
 
 export default function SocialChallengesPage() {
   const router = useRouter();
+  const toast = useToast();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [sessions, setSessions] = useState<SocialSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export default function SocialChallengesPage() {
         throw new Error(data.error || 'Error al crear la invitación');
       }
 
-      alert('✅ Invitación enviada');
+      toast.success('Invitación enviada');
       setShowCreateForm(false);
       setSelectedChallenge(null);
       setInviteeEmail('');
@@ -110,7 +112,7 @@ export default function SocialChallengesPage() {
         throw new Error(data.error || 'Error al aceptar la invitación');
       }
 
-      alert('✅ Invitación aceptada. ¡Prepárate para el reto!');
+      toast.success('Invitación aceptada. ¡Prepárate para el reto!');
       fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al aceptar');
@@ -133,16 +135,8 @@ export default function SocialChallengesPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-          
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            👥 Retos Sociales
+            Retos Sociales
           </h1>
           <p className="text-gray-600">
             Desconéctate junto a tus amigos y familia

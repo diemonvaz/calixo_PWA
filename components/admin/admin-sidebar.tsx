@@ -69,10 +69,10 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
   );
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-neutral-gray/20 z-10">
-      <div className="p-6 border-b border-neutral-gray/20">
-        <h2 className="text-xl font-bold text-dark-navy">Calixo Admin</h2>
-        <p className="text-sm text-neutral-gray mt-1">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-neutral/20 z-10">
+      <div className="p-6 border-b border-neutral/20">
+        <h2 className="text-xl font-bold text-text-dark font-serif">Calixo Admin</h2>
+        <p className="text-sm text-neutral mt-1">
           {role === 'admin' ? 'Administrador' : 'Moderador'}
         </p>
       </div>
@@ -87,8 +87,8 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-xl transition-colors',
                 isActive
-                  ? 'bg-soft-blue text-white'
-                  : 'text-neutral-gray hover:bg-neutral-gray/10 hover:text-dark-navy'
+                  ? 'bg-primary text-white'
+                  : 'text-neutral hover:bg-neutral/10 hover:text-text-dark'
               )}
             >
               <span className="text-xl">{item.icon}</span>
@@ -98,13 +98,13 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
         })}
       </nav>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-neutral-gray/20">
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-neutral/20">
         <Link
-          href="/dashboard"
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-neutral-gray hover:bg-neutral-gray/10 hover:text-dark-navy transition-colors"
+          href="/"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-neutral hover:bg-neutral/10 hover:text-text-dark transition-colors"
         >
           <span className="text-xl">←</span>
-          <span className="font-medium">Volver al Dashboard</span>
+          <span className="font-medium">Volver al Feed</span>
         </Link>
       </div>
     </aside>

@@ -9,40 +9,68 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Calixo brand colors
-        beige: {
-          DEFAULT: '#F5F0E8',
-          light: '#FAF7F2',
-          dark: '#E8E3DB',
+        // Calixo brand colors - Nuevo esquema
+        primary: {
+          DEFAULT: '#fe4b5b',
+          light: '#ff6b7a',
+          dark: '#e63946',
+          lighter: '#ff8a95',
+          darker: '#cc2e3a',
         },
-        'soft-blue': {
-          DEFAULT: '#5A8DEE',
-          light: '#7BA5F4',
-          dark: '#4374D9',
+        // Colores complementarios al rojo/rosa principal
+        complementary: {
+          emerald: {
+            DEFAULT: '#10B981',
+            light: '#34D399',
+            dark: '#059669',
+          },
+          turquoise: {
+            DEFAULT: '#06B6D4',
+            light: '#22D3EE',
+            dark: '#0891B2',
+          },
+          mint: {
+            DEFAULT: '#A7F3D0',
+            light: '#D1FAE5',
+            dark: '#6EE7B7',
+          },
         },
-        'neutral-gray': {
+        // Grises neutros para texto y bordes
+        neutral: {
           DEFAULT: '#6B7280',
           light: '#9CA3AF',
           dark: '#4B5563',
+          lighter: '#D1D5DB',
+          darker: '#374151',
         },
-        'accent-green': {
-          DEFAULT: '#22C55E',
-          light: '#4ADE80',
-          dark: '#16A34A',
+        // Colores de acento
+        accent: {
+          green: {
+            DEFAULT: '#10B981',
+            light: '#34D399',
+            dark: '#059669',
+          },
+          red: {
+            DEFAULT: '#EF4444',
+            light: '#F87171',
+            dark: '#DC2626',
+          },
+          yellow: {
+            DEFAULT: '#F59E0B',
+            light: '#FBBF24',
+            dark: '#D97706',
+          },
         },
-        'accent-red': {
-          DEFAULT: '#EF4444',
-          light: '#F87171',
-          dark: '#DC2626',
-        },
-        'dark-navy': {
-          DEFAULT: '#1E293B',
-          light: '#334155',
-          dark: '#0F172A',
+        // Texto oscuro
+        text: {
+          DEFAULT: '#1F2937',
+          light: '#6B7280',
+          dark: '#111827',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Questrial', 'system-ui', 'sans-serif'],
+        serif: ['Trebuchet MS', 'Trebuchet', 'Arial', 'sans-serif'],
       },
       borderRadius: {
         'xl': '1rem',

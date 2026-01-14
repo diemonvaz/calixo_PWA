@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { followers, notifications } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * POST /api/follow
@@ -10,7 +7,7 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -37,17 +34,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get target user's profile to check if private
+    const { data: targetUser, error: targetUserError } = await supabase
+      .from('users')
+      .select('is_private')
+      .eq('id', targetUserId)
+      .single();
+
+    if (targetUserError || !targetUser) {
+      return NextResponse.json(
+        { error: 'Usuario no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const isPrivate = targetUser.is_private;
+
     // Check if already following
-    const [existing] = await db
-      .select()
-      .from(followers)
-      .where(
-        and(
-          eq(followers.followerId, user.id),
-          eq(followers.followingId, targetUserId)
-        )
-      )
-      .limit(1);
+    const { data: existing } = await supabase
+      .from('followers')
+      .select('*')
+      .eq('follower_id', user.id)
+      .eq('following_id', targetUserId)
+      .single();
+
+    // Check if there's a pending request
+    const { data: pendingRequest } = await supabase
+      .from('follow_requests')
+      .select('*')
+      .eq('requester_id', user.id)
+      .eq('requested_id', targetUserId)
+      .eq('status', 'pending')
+      .single();
 
     if (action === 'follow') {
       if (existing) {
@@ -57,30 +75,120 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create follow relationship
-      await db.insert(followers).values({
-        followerId: user.id,
-        followingId: targetUserId,
-        followedAt: new Date(),
-      });
+      if (pendingRequest) {
+        return NextResponse.json(
+          { error: 'Ya tienes una solicitud pendiente con este usuario' },
+          { status: 400 }
+        );
+      }
+
+      // If profile is private, create a follow request instead
+      if (isPrivate) {
+        const { data: newRequest, error: requestError } = await supabase
+          .from('follow_requests')
+          .insert({
+            requester_id: user.id,
+            requested_id: targetUserId,
+            status: 'pending',
+          })
+          .select()
+          .single();
+
+        if (requestError) {
+          throw requestError;
+        }
+
+        // Create notification for follow request
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: targetUserId,
+            type: 'social',
+            title: 'Nueva solicitud de seguimiento',
+            message: 'Tienes una nueva solicitud de seguimiento',
+            payload: {
+              type: 'follow_request',
+              requesterId: user.id,
+              requestId: newRequest.id,
+            },
+            seen: false,
+          });
+
+        if (notifError) {
+          console.error('Error creating notification:', notifError);
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Solicitud de seguimiento enviada',
+          requiresApproval: true,
+          requestId: newRequest.id,
+        });
+      }
+
+      // Profile is public, follow directly
+      const { error: followError } = await supabase
+        .from('followers')
+        .insert({
+          follower_id: user.id,
+          following_id: targetUserId,
+        });
+
+      if (followError) {
+        throw followError;
+      }
 
       // Create notification
-      await db.insert(notifications).values({
-        userId: targetUserId,
-        type: 'social',
-        payload: {
-          type: 'new_follower',
-          followerId: user.id,
-        },
-        seen: false,
-        createdAt: new Date(),
-      });
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: targetUserId,
+          type: 'social',
+          title: 'Nuevo seguidor',
+          message: 'Tienes un nuevo seguidor',
+          payload: {
+            type: 'new_follower',
+            followerId: user.id,
+          },
+          seen: false,
+        });
+
+      if (notifError) {
+        console.error('Error creating notification:', notifError);
+      }
+
+      // Get updated followers count
+      const { count: followersCount } = await supabase
+        .from('followers')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', targetUserId);
 
       return NextResponse.json({
         success: true,
         message: 'Ahora sigues a este usuario',
+        followersCount: followersCount || 0,
+        requiresApproval: false,
       });
     } else if (action === 'unfollow') {
+      // Check if there's a pending request to cancel
+      if (pendingRequest) {
+        const { error: deleteRequestError } = await supabase
+          .from('follow_requests')
+          .delete()
+          .eq('id', pendingRequest.id);
+
+        if (deleteRequestError) {
+          throw deleteRequestError;
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Solicitud cancelada',
+          cancelledRequest: true,
+        });
+      }
+
+      // If not following, return error
       if (!existing) {
         return NextResponse.json(
           { error: 'No sigues a este usuario' },
@@ -89,18 +197,26 @@ export async function POST(request: NextRequest) {
       }
 
       // Remove follow relationship
-      await db
-        .delete(followers)
-        .where(
-          and(
-            eq(followers.followerId, user.id),
-            eq(followers.followingId, targetUserId)
-          )
-        );
+      const { error: unfollowError } = await supabase
+        .from('followers')
+        .delete()
+        .eq('follower_id', user.id)
+        .eq('following_id', targetUserId);
+
+      if (unfollowError) {
+        throw unfollowError;
+      }
+
+      // Get updated followers count
+      const { count: followersCount } = await supabase
+        .from('followers')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', targetUserId);
 
       return NextResponse.json({
         success: true,
         message: 'Dejaste de seguir a este usuario',
+        followersCount: followersCount || 0,
       });
     } else {
       return NextResponse.json(

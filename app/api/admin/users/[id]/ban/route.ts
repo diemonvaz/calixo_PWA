@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const isAdmin = await requireAdmin();
@@ -18,7 +18,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const userId = params.id;
+    const { id } = await params;
+    const userId = id;
     const body = await request.json();
     const { banned } = body;
 

@@ -41,13 +41,13 @@ export default async function AdminDashboard() {
       title: 'Retos Totales',
       value: totalChallenges[0]?.count || 0,
       icon: '🎯',
-      color: 'text-soft-blue',
+      color: 'text-primary',
     },
     {
       title: 'Usuarios Totales',
       value: totalUsers[0]?.count || 0,
       icon: '👥',
-      color: 'text-accent-green',
+      color: 'text-complementary-emerald',
     },
     {
       title: 'Posts en Feed',
@@ -71,17 +71,17 @@ export default async function AdminDashboard() {
       title: 'Retos Completados Hoy',
       value: challengesCompletedToday[0]?.count || 0,
       icon: '✅',
-      color: 'text-accent-green',
+      color: 'text-complementary-emerald',
     },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-dark-navy mb-2">
+        <h2 className="text-3xl font-bold text-text-dark font-serif mb-2">
           Dashboard de Administración
         </h2>
-        <p className="text-neutral-gray">
+        <p className="text-neutral">
           Bienvenido al panel de administración de Calixo
         </p>
       </div>
@@ -92,8 +92,8 @@ export default async function AdminDashboard() {
           <Card key={stat.title} className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-gray mb-1">{stat.title}</p>
-                <p className="text-3xl font-bold text-dark-navy">{stat.value}</p>
+                <p className="text-sm text-neutral mb-1">{stat.title}</p>
+                <p className="text-3xl font-bold text-text-dark font-serif">{stat.value}</p>
               </div>
               <div className={`text-4xl ${stat.color}`}>{stat.icon}</div>
             </div>
@@ -103,45 +103,45 @@ export default async function AdminDashboard() {
 
       {/* Quick Actions */}
       <Card className="p-6">
-        <h3 className="text-xl font-bold text-dark-navy mb-4">Acciones Rápidas</h3>
+        <h3 className="text-xl font-bold text-text-dark font-serif mb-4">Acciones Rápidas</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {permissions.isAdmin && (
             <>
               <a
                 href="/admin/challenges"
-                className="p-4 border border-neutral-gray/20 rounded-xl hover:border-soft-blue hover:bg-soft-blue/5 transition-colors"
+                className="p-4 border border-neutral/20 rounded-xl hover:border-primary hover:bg-primary/5 transition-colors"
               >
                 <div className="text-2xl mb-2">🎯</div>
-                <div className="font-medium text-dark-navy">Crear Reto</div>
-                <div className="text-sm text-neutral-gray">Añadir nuevo reto al catálogo</div>
+                <div className="font-medium text-text-dark font-serif">Crear Reto</div>
+                <div className="text-sm text-neutral">Añadir nuevo reto al catálogo</div>
               </a>
               <a
                 href="/admin/coupons"
-                className="p-4 border border-neutral-gray/20 rounded-xl hover:border-soft-blue hover:bg-soft-blue/5 transition-colors"
+                className="p-4 border border-neutral/20 rounded-xl hover:border-primary hover:bg-primary/5 transition-colors"
               >
                 <div className="text-2xl mb-2">🎫</div>
-                <div className="font-medium text-dark-navy">Crear Cupón</div>
-                <div className="text-sm text-neutral-gray">Generar código de descuento</div>
+                <div className="font-medium text-text-dark font-serif">Crear Cupón</div>
+                <div className="text-sm text-neutral">Generar código de descuento</div>
               </a>
             </>
           )}
           <a
             href="/admin/moderation"
-            className="p-4 border border-neutral-gray/20 rounded-xl hover:border-soft-blue hover:bg-soft-blue/5 transition-colors"
+            className="p-4 border border-neutral/20 rounded-xl hover:border-primary hover:bg-primary/5 transition-colors"
           >
             <div className="text-2xl mb-2">🛡️</div>
-            <div className="font-medium text-dark-navy">Revisar Reportes</div>
-            <div className="text-sm text-neutral-gray">
+            <div className="font-medium text-text-dark font-serif">Revisar Reportes</div>
+            <div className="text-sm text-neutral">
               {pendingReports[0]?.count || 0} pendientes
             </div>
           </a>
           <a
             href="/admin/users"
-            className="p-4 border border-neutral-gray/20 rounded-xl hover:border-soft-blue hover:bg-soft-blue/5 transition-colors"
+            className="p-4 border border-neutral/20 rounded-xl hover:border-primary hover:bg-primary/5 transition-colors"
           >
             <div className="text-2xl mb-2">👥</div>
-            <div className="font-medium text-dark-navy">Gestionar Usuarios</div>
-            <div className="text-sm text-neutral-gray">Ver y administrar usuarios</div>
+            <div className="font-medium text-text-dark font-serif">Gestionar Usuarios</div>
+            <div className="text-sm text-neutral">Ver y administrar usuarios</div>
           </a>
         </div>
       </Card>

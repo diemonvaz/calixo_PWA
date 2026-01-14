@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { ChallengeTimer } from '@/components/challenges/challenge-timer';
 import { ChallengeCompletionForm } from '@/components/challenges/challenge-completion-form';
+import { ChallengeSuccessModal } from '@/components/challenges/challenge-success-modal';
+import { useToast } from '@/components/ui/toast';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Challenge {
   id: number;
@@ -33,6 +36,8 @@ interface SessionData {
 
 export default function DailyChallengesPage() {
   const router = useRouter();
+  const toast = useToast();
+  const confirmDialog = useConfirmDialog();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +48,12 @@ export default function DailyChallengesPage() {
   const [userChallengeId, setUserChallengeId] = useState<number | null>(null);
   const [showTimer, setShowTimer] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [completionData, setCompletionData] = useState<{
+    coinsEarned: number;
+    feedItemId?: number;
+  } | null>(null);
 
   useEffect(() => {
     fetchChallenges();
@@ -53,12 +63,23 @@ export default function DailyChallengesPage() {
     try {
       const response = await fetch('/api/challenges?type=daily');
       if (!response.ok) {
-        throw new Error('Error al cargar los retos');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
       }
       const data = await response.json();
-      setChallenges(data.challenges);
-      setUserProfile(data.userProfile);
+      console.log('API Response:', data);
+      console.log('Challenges:', data.challenges);
+      
+      // Asegurarse de que challenges sea un array
+      const challengesArray = Array.isArray(data.challenges) ? data.challenges : [];
+      setChallenges(challengesArray);
+      setUserProfile(data.userProfile || null);
+      
+      if (challengesArray.length === 0) {
+        console.warn('No se encontraron retos en la respuesta de la API');
+      }
     } catch (err) {
+      console.error('Error fetching challenges:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
@@ -66,7 +87,13 @@ export default function DailyChallengesPage() {
   };
 
   const handleStartChallenge = async (challenge: Challenge) => {
+    if (!challenge || !challenge.id) {
+      setError('Error: Reto inválido');
+      return;
+    }
+
     try {
+      console.log('Starting challenge:', challenge.id);
       const response = await fetch('/api/challenges/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,8 +101,9 @@ export default function DailyChallengesPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Error al iniciar el reto');
+        const data = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        console.error('Error response:', data);
+        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -83,6 +111,7 @@ export default function DailyChallengesPage() {
       setUserChallengeId(data.userChallenge.id);
       setShowTimer(true);
     } catch (err) {
+      console.error('Error starting challenge:', err);
       setError(err instanceof Error ? err.message : 'Error al iniciar el reto');
     }
   };
@@ -107,7 +136,7 @@ export default function DailyChallengesPage() {
         }),
       });
 
-      alert(`❌ Reto fallido: ${reason}`);
+      toast.error(`Reto fallido: ${reason}`, 6000);
       resetState();
       fetchChallenges();
     } catch (err) {
@@ -116,9 +145,33 @@ export default function DailyChallengesPage() {
   };
 
   const handleChallengeCancel = () => {
-    if (confirm('¿Estás seguro de que quieres cancelar este reto?')) {
-      resetState();
-    }
+    confirmDialog.confirm({
+      title: 'Cancelar reto',
+      message: '¿Estás seguro de que quieres cancelar este reto?',
+      confirmText: 'Sí, cancelar',
+      cancelText: 'No, continuar',
+      confirmVariant: 'destructive',
+      onConfirm: async () => {
+        if (!userChallengeId) {
+          resetState();
+          return;
+        }
+
+        try {
+          await fetch('/api/challenges/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userChallengeId }),
+          });
+          toast.info('Reto cancelado');
+        } catch (err) {
+          console.error('Error al cancelar el reto:', err);
+          toast.error('Error al cancelar el reto');
+        } finally {
+          resetState();
+        }
+      },
+    });
   };
 
   const handleSubmitCompletion = async (imageUrl: string, note: string) => {
@@ -141,9 +194,16 @@ export default function DailyChallengesPage() {
       }
 
       const data = await response.json();
-      alert(`🎉 ¡Reto completado! Ganaste ${data.coinsEarned} monedas`);
-      resetState();
-      router.push('/dashboard');
+      
+      // Hide completion form and show success modal
+      setShowCompletion(false);
+      setCompletionData({
+        coinsEarned: data.coinsEarned,
+        feedItemId: data.feedItem?.id,
+      });
+      setShowSuccessModal(true);
+      
+      toast.success(`¡Reto completado! Ganaste ${data.coinsEarned} monedas`, 5000);
     } catch (err) {
       throw err; // Re-throw to be handled by the form
     }
@@ -153,7 +213,7 @@ export default function DailyChallengesPage() {
     if (!userChallengeId || !sessionData) return;
 
     try {
-      await fetch('/api/challenges/complete', {
+      const response = await fetch('/api/challenges/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -162,9 +222,24 @@ export default function DailyChallengesPage() {
         }),
       });
 
-      router.push('/dashboard');
+      if (!response.ok) {
+        throw new Error('Error al completar el reto');
+      }
+
+      const data = await response.json();
+      
+      // Hide completion form and show success modal
+      setShowCompletion(false);
+      setCompletionData({
+        coinsEarned: data.coinsEarned,
+        feedItemId: data.feedItem?.id,
+      });
+      setShowSuccessModal(true);
+      
+      toast.success(`¡Reto completado! Ganaste ${data.coinsEarned} monedas`, 5000);
     } catch (err) {
       console.error('Error:', err);
+      toast.error('Error al completar el reto');
     }
   };
 
@@ -173,7 +248,15 @@ export default function DailyChallengesPage() {
     setUserChallengeId(null);
     setShowTimer(false);
     setShowCompletion(false);
+    setShowSuccessModal(false);
     setSessionData(null);
+    setCompletionData(null);
+  };
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    resetState();
+    fetchChallenges();
   };
 
   if (loading) {
@@ -203,47 +286,53 @@ export default function DailyChallengesPage() {
 
   if (showCompletion && activeChallenge) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <ChallengeCompletionForm
-          challengeTitle={activeChallenge.title}
-          coinsEarned={activeChallenge.reward}
-          onSubmit={handleSubmitCompletion}
-          onSkip={handleSkipCompletion}
-        />
-      </div>
+      <>
+        {/* Success Modal - Show on top of completion form */}
+        {showSuccessModal && completionData && (
+          <ChallengeSuccessModal
+            isOpen={showSuccessModal}
+            challengeTitle={activeChallenge.title}
+            coinsEarned={completionData.coinsEarned}
+            feedItemId={completionData.feedItemId}
+            onClose={handleCloseSuccessModal}
+          />
+        )}
+        <div className="min-h-screen bg-gray-50 py-8 px-4">
+          <ChallengeCompletionForm
+            challengeTitle={activeChallenge.title}
+            coinsEarned={activeChallenge.reward}
+            onSubmit={handleSubmitCompletion}
+            onSkip={handleSkipCompletion}
+          />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <>
+      {/* Success Modal */}
+      {showSuccessModal && activeChallenge && completionData && (
+        <ChallengeSuccessModal
+          isOpen={showSuccessModal}
+          challengeTitle={activeChallenge.title}
+          coinsEarned={completionData.coinsEarned}
+          feedItemId={completionData.feedItemId}
+          onClose={handleCloseSuccessModal}
+        />
+      )}
+
+      {/* Main Content */}
+      <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-          
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Retos Diarios
           </h1>
           <p className="text-gray-600">
             Desconéctate del mundo digital y reconecta contigo mismo
           </p>
-
-          {userProfile && (
-            <div className="mt-4 flex items-center gap-4 text-sm">
-              <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
-                {userProfile.isPremium ? '⭐ Premium' : '🆓 Gratis'}
-              </div>
-              <div className="text-gray-600">
-                Retos de hoy: {userProfile.todaysChallengesCount} / {userProfile.maxDailyChallenges}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Error Message */}
@@ -256,11 +345,11 @@ export default function DailyChallengesPage() {
         {/* Challenges Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {challenges.map((challenge) => (
-            <Card key={challenge.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
+            <Card key={challenge.id} className="hover:shadow-lg transition-shadow flex flex-col h-full">
+              <CardHeader className="flex-shrink-0">
                 <CardTitle className="flex items-center justify-between">
-                  <span>{challenge.title}</span>
-                  <span className="text-yellow-600 text-sm">
+                  <span className="line-clamp-2">{challenge.title}</span>
+                  <span className="text-yellow-600 text-sm flex-shrink-0 ml-2">
                     🪙 {challenge.reward}
                   </span>
                 </CardTitle>
@@ -268,12 +357,12 @@ export default function DailyChallengesPage() {
                   ⏱️ {challenge.durationMinutes} minutos
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">
+              <CardContent className="flex-grow flex flex-col">
+                <p className="text-sm text-gray-600 line-clamp-3 flex-grow">
                   {challenge.description}
                 </p>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex-shrink-0">
                 {challenge.canStart ? (
                   <Button
                     onClick={() => handleStartChallenge(challenge)}
@@ -312,6 +401,7 @@ export default function DailyChallengesPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
 

@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { avatarCustomizations, profiles, storeItems } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/avatar
@@ -10,7 +7,7 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -20,50 +17,69 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user profile
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.userId, user.id))
-      .limit(1);
+    // Get user
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
 
-    if (!profile) {
+    if (userError || !userData) {
       return NextResponse.json(
-        { error: 'Perfil no encontrado' },
+        { error: 'Usuario no encontrado' },
         { status: 404 }
       );
     }
 
     // Get user's customizations
-    const customizations = await db
-      .select()
-      .from(avatarCustomizations)
-      .where(eq(avatarCustomizations.userId, user.id));
+    const { data: customizations, error: customizationsError } = await supabase
+      .from('avatar_customizations')
+      .select('*')
+      .eq('user_id', user.id);
+
+    if (customizationsError) {
+      throw customizationsError;
+    }
 
     // Get all available store items
-    const items = await db
-      .select()
-      .from(storeItems)
-      .where(eq(storeItems.isActive, true));
+    const { data: items, error: itemsError } = await supabase
+      .from('store_items')
+      .select('*')
+      .eq('is_active', true);
+
+    if (itemsError) {
+      throw itemsError;
+    }
 
     // Calculate energy level
-    const energyLevel = profile.avatarEnergy >= 70
+    const avatarEnergy = userData.avatar_energy || 100;
+    const energyLevel = avatarEnergy >= 70
       ? 'alta'
-      : profile.avatarEnergy >= 40
+      : avatarEnergy >= 40
       ? 'media'
       : 'baja';
 
+    // Format customizations
+    const formattedCustomizations = (customizations || []).map(c => ({
+      id: c.id,
+      userId: c.user_id,
+      category: c.category,
+      itemId: c.item_id,
+      unlockedAt: c.unlocked_at,
+      equipped: c.equipped,
+    }));
+
     // Group customizations by category
-    const customizationsByCategory = customizations.reduce((acc, item) => {
+    const customizationsByCategory = formattedCustomizations.reduce((acc, item) => {
       if (!acc[item.category]) {
         acc[item.category] = [];
       }
       acc[item.category].push(item);
       return acc;
-    }, {} as Record<string, typeof customizations>);
+    }, {} as Record<string, typeof formattedCustomizations>);
 
     // Get equipped items per category
-    const equippedItems = customizations
+    const equippedItems = formattedCustomizations
       .filter(c => c.equipped)
       .reduce((acc, item) => {
         acc[item.category] = item.itemId;
@@ -73,17 +89,31 @@ export async function GET(request: NextRequest) {
     // Calculate unlocked categories
     const unlockedCategories = Object.keys(customizationsByCategory);
 
+    // Format items
+    const formattedItems = (items || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      itemId: item.item_id,
+      price: item.price,
+      premiumOnly: item.premium_only,
+      imageUrl: item.image_url,
+      description: item.description,
+      isActive: item.is_active,
+      createdAt: item.created_at,
+    }));
+
     return NextResponse.json({
       profile: {
-        avatarEnergy: profile.avatarEnergy,
+        avatarEnergy,
         energyLevel,
-        coins: profile.coins,
-        isPremium: profile.isPremium,
+        coins: userData.coins,
+        isPremium: userData.is_premium,
       },
       customizations: customizationsByCategory,
       equippedItems,
       unlockedCategories,
-      availableItems: items,
+      availableItems: formattedItems,
     });
   } catch (error) {
     console.error('Error fetching avatar data:', error);
@@ -100,7 +130,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -121,16 +151,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the store item
-    const [item] = await db
-      .select()
-      .from(storeItems)
-      .where(and(
-        eq(storeItems.itemId, itemId),
-        eq(storeItems.isActive, true)
-      ))
-      .limit(1);
+    const { data: item, error: itemError } = await supabase
+      .from('store_items')
+      .select('*')
+      .eq('item_id', itemId)
+      .eq('is_active', true)
+      .single();
 
-    if (!item) {
+    if (itemError || !item) {
       return NextResponse.json(
         { error: 'Item no encontrado' },
         { status: 404 }
@@ -138,16 +166,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has this item
-    const existing = await db
-      .select()
-      .from(avatarCustomizations)
-      .where(and(
-        eq(avatarCustomizations.userId, user.id),
-        eq(avatarCustomizations.itemId, itemId)
-      ))
-      .limit(1);
+    const { data: existing } = await supabase
+      .from('avatar_customizations')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('item_id', itemId)
+      .single();
 
-    if (existing.length > 0) {
+    if (existing) {
       return NextResponse.json(
         { error: 'Ya tienes este item' },
         { status: 400 }
@@ -155,21 +181,43 @@ export async function POST(request: NextRequest) {
     }
 
     // Add to user's customizations (unlocked but not equipped)
-    const [newCustomization] = await db
-      .insert(avatarCustomizations)
-      .values({
-        userId: user.id,
+    const { data: newCustomization, error: insertError } = await supabase
+      .from('avatar_customizations')
+      .insert({
+        user_id: user.id,
         category: item.category,
-        itemId: item.itemId,
+        item_id: item.item_id,
         equipped: false,
-        unlockedAt: new Date(),
       })
-      .returning();
+      .select()
+      .single();
+
+    if (insertError || !newCustomization) {
+      throw insertError;
+    }
 
     return NextResponse.json({
       success: true,
-      customization: newCustomization,
-      item,
+      customization: {
+        id: newCustomization.id,
+        userId: newCustomization.user_id,
+        category: newCustomization.category,
+        itemId: newCustomization.item_id,
+        equipped: newCustomization.equipped,
+        unlockedAt: newCustomization.unlocked_at,
+      },
+      item: {
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        itemId: item.item_id,
+        price: item.price,
+        premiumOnly: item.premium_only,
+        imageUrl: item.image_url,
+        description: item.description,
+        isActive: item.is_active,
+        createdAt: item.created_at,
+      },
     });
   } catch (error) {
     console.error('Error unlocking item:', error);

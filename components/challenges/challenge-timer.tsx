@@ -71,16 +71,32 @@ export function ChallengeTimer({
       console.log('Challenge interrupted: tab hidden');
     } else {
       // Tab became visible again
-      if (wasHiddenRef.current) {
+      if (wasHiddenRef.current && !isCompleted) {
         // Challenge was interrupted, mark as failed
-        const sessionData = getSessionData();
-        onFail(sessionData, 'Tab fue ocultado o minimizado');
         setIsCompleted(true);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+        // Use setTimeout to defer the callback to avoid setState during render
+        setTimeout(() => {
+          const sessionData = getSessionData();
+          onFail(sessionData, 'Tab fue ocultado o minimizado');
+        }, 0);
       }
     }
-  }, [getSessionData, onFail]);
+  }, [getSessionData, onFail, isCompleted]);
 
+  // Timer effect - only runs when not paused and not completed
   useEffect(() => {
+    // Don't start timer if paused or completed
+    if (isPaused || isCompleted) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
+      return;
+    }
+
     // Start the timer
     intervalRef.current = setInterval(() => {
       setElapsedSeconds((prev) => {
@@ -89,13 +105,6 @@ export function ChallengeTimer({
         // Check if challenge is complete
         if (next >= totalSeconds) {
           setIsCompleted(true);
-          const sessionData: SessionData = {
-            durationSeconds: next,
-            interruptions,
-            startTime: startTimeRef.current,
-            endTime: new Date().toISOString(),
-          };
-          onComplete(sessionData);
           return next;
         }
         
@@ -103,24 +112,43 @@ export function ChallengeTimer({
       });
     }, 1000);
 
-    // Add visibility change listener
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     // Cleanup
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
       }
+    };
+  }, [isPaused, isCompleted, totalSeconds]);
+
+  // Visibility change listener effect
+  useEffect(() => {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [totalSeconds, interruptions, handleVisibilityChange, onComplete]);
+  }, [handleVisibilityChange]);
 
-  // Pause interval when paused
+  // Handle completion when elapsedSeconds reaches totalSeconds
   useEffect(() => {
-    if (isPaused && intervalRef.current) {
-      clearInterval(intervalRef.current);
+    if (elapsedSeconds >= totalSeconds && !isCompleted) {
+      setIsCompleted(true);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
+      const sessionData: SessionData = {
+        durationSeconds: elapsedSeconds,
+        interruptions,
+        startTime: startTimeRef.current,
+        endTime: new Date().toISOString(),
+      };
+      // Use setTimeout to defer the callback to avoid setState during render
+      setTimeout(() => {
+        onComplete(sessionData);
+      }, 0);
     }
-  }, [isPaused]);
+  }, [elapsedSeconds, totalSeconds, interruptions, isCompleted, onComplete]);
 
   const handleCancel = () => {
     if (intervalRef.current) {

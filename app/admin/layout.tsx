@@ -11,11 +11,11 @@ export default async function AdminLayout({
   const permissions = await checkAdminPermissions();
 
   if (!permissions.isModerator) {
-    redirect('/dashboard');
+    redirect('/');
   }
 
   return (
-    <div className="min-h-screen bg-beige">
+    <div className="min-h-screen bg-white">
       <div className="flex">
         {/* Sidebar */}
         <AdminSidebar role={permissions.role!} />
@@ -23,8 +23,8 @@ export default async function AdminLayout({
         {/* Main Content */}
         <div className="flex-1 ml-64">
           {/* Top Bar */}
-          <div className="bg-white border-b border-neutral-gray/20 px-6 py-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-dark-navy">Panel de Administración</h1>
+          <div className="bg-white border-b border-neutral/20 px-6 py-4 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-text-dark font-serif">Panel de Administración</h1>
             <ModeToggle currentRole={permissions.role!} />
           </div>
 

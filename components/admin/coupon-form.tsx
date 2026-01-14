@@ -73,7 +73,7 @@ export function CouponForm({ coupon }: CouponFormProps) {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-dark-navy mb-2">
+          <label className="block text-sm font-medium text-text-dark mb-2">
             Código del Cupón *
           </label>
           <input
@@ -82,7 +82,7 @@ export function CouponForm({ coupon }: CouponFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, code: e.target.value.toUpperCase() })
             }
-            className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue font-mono"
+            className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono"
             required
             maxLength={50}
             placeholder="EJEMPLO2024"
@@ -90,7 +90,7 @@ export function CouponForm({ coupon }: CouponFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-dark-navy mb-2">
+          <label className="block text-sm font-medium text-text-dark mb-2">
             Porcentaje de Descuento *
           </label>
           <input
@@ -102,18 +102,18 @@ export function CouponForm({ coupon }: CouponFormProps) {
                 discountPercent: parseInt(e.target.value) || 0,
               })
             }
-            className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+            className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             required
             min={1}
             max={100}
           />
-          <p className="text-sm text-neutral-gray mt-1">
+          <p className="text-sm text-neutral mt-1">
             Descuento del {formData.discountPercent}% aplicado
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-dark-navy mb-2">
+          <label className="block text-sm font-medium text-text-dark mb-2">
             Límite de Usos (opcional)
           </label>
           <input
@@ -125,14 +125,14 @@ export function CouponForm({ coupon }: CouponFormProps) {
                 maxUses: e.target.value ? parseInt(e.target.value) : null,
               })
             }
-            className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+            className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             min={1}
             placeholder="Dejar vacío para ilimitado"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-dark-navy mb-2">
+          <label className="block text-sm font-medium text-text-dark mb-2">
             Válido Hasta *
           </label>
           <input
@@ -141,7 +141,7 @@ export function CouponForm({ coupon }: CouponFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, validUntil: e.target.value })
             }
-            className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+            className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             required
             min={new Date().toISOString().split('T')[0]}
           />
@@ -155,9 +155,9 @@ export function CouponForm({ coupon }: CouponFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, isActive: e.target.checked })
             }
-            className="w-4 h-4 text-soft-blue border-neutral-gray/20 rounded focus:ring-soft-blue"
+            className="w-4 h-4 text-primary border-neutral/20 rounded focus:ring-primary"
           />
-          <label htmlFor="isActive" className="text-sm text-dark-navy">
+          <label htmlFor="isActive" className="text-sm text-text-dark">
             Cupón activo
           </label>
         </div>

@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { storeItems, avatarCustomizations, profiles } from '@/db/schema';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/store
@@ -10,7 +7,7 @@ import { eq, and, or, inArray } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -28,74 +25,87 @@ export async function GET(request: NextRequest) {
     const premiumOnly = searchParams.get('premiumOnly');
     const search = searchParams.get('search');
 
-    // Get user profile
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.userId, user.id))
-      .limit(1);
+    // Get user
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
 
-    if (!profile) {
+    if (userError || !userData) {
       return NextResponse.json(
-        { error: 'Perfil no encontrado' },
+        { error: 'Usuario no encontrado' },
         { status: 404 }
       );
     }
 
-    // Build query conditions
-    let whereConditions = [eq(storeItems.isActive, true)];
+    // Build query for store items
+    let query = supabase
+      .from('store_items')
+      .select('*')
+      .eq('is_active', true);
 
     if (category) {
-      whereConditions.push(eq(storeItems.category, category));
+      query = query.eq('category', category);
     }
 
     if (premiumOnly === 'true') {
-      whereConditions.push(eq(storeItems.premiumOnly, true));
+      query = query.eq('premium_only', true);
     } else if (premiumOnly === 'false') {
-      whereConditions.push(eq(storeItems.premiumOnly, false));
+      query = query.eq('premium_only', false);
     }
 
-    // Get all items
-    let items = await db
-      .select()
-      .from(storeItems)
-      .where(and(...whereConditions));
+    const { data: items, error: itemsError } = await query;
+
+    if (itemsError) {
+      throw itemsError;
+    }
 
     // Apply price filters
+    let filteredItems = items || [];
     if (minPrice) {
       const min = parseInt(minPrice);
-      items = items.filter(item => item.price >= min);
+      filteredItems = filteredItems.filter(item => item.price >= min);
     }
 
     if (maxPrice) {
       const max = parseInt(maxPrice);
-      items = items.filter(item => item.price <= max);
+      filteredItems = filteredItems.filter(item => item.price <= max);
     }
 
     // Apply search filter
     if (search) {
       const searchLower = search.toLowerCase();
-      items = items.filter(item => 
-        item.name.toLowerCase().includes(searchLower) ||
+      filteredItems = filteredItems.filter(item => 
+        item.name?.toLowerCase().includes(searchLower) ||
         item.description?.toLowerCase().includes(searchLower)
       );
     }
 
     // Get user's owned items
-    const ownedItems = await db
-      .select()
-      .from(avatarCustomizations)
-      .where(eq(avatarCustomizations.userId, user.id));
+    const { data: ownedItems } = await supabase
+      .from('avatar_customizations')
+      .select('item_id')
+      .eq('user_id', user.id);
 
-    const ownedItemIds = new Set(ownedItems.map(item => item.itemId));
+    const ownedItemIds = new Set((ownedItems || []).map(item => item.item_id));
 
     // Add ownership status to items
-    const itemsWithStatus = items.map(item => ({
-      ...item,
-      owned: ownedItemIds.has(item.itemId),
-      canPurchase: !ownedItemIds.has(item.itemId) && 
-                   profile.coins >= item.price &&
-                   (!item.premiumOnly || profile.isPremium),
+    const itemsWithStatus = filteredItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      itemId: item.item_id,
+      price: item.price,
+      premiumOnly: item.premium_only,
+      imageUrl: item.image_url,
+      description: item.description,
+      isActive: item.is_active,
+      createdAt: item.created_at,
+      owned: ownedItemIds.has(item.item_id),
+      canPurchase: !ownedItemIds.has(item.item_id) && 
+                   userData.coins >= item.price &&
+                   (!item.premium_only || userData.is_premium),
     }));
 
     // Sort items: unowned first, then by price
@@ -106,8 +116,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       items: itemsWithStatus,
-      userCoins: profile.coins,
-      isPremium: profile.isPremium,
+      userCoins: userData.coins,
+      isPremium: userData.is_premium,
       totalItems: itemsWithStatus.length,
       ownedCount: ownedItemIds.size,
     });

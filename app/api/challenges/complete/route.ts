@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { userChallenges, challenges, profiles, transactions, feedItems, focusSessions } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 import { updateEnergyOnChallengeComplete } from '@/lib/avatar-energy';
 
 /**
@@ -11,7 +8,7 @@ import { updateEnergyOnChallengeComplete } from '@/lib/avatar-energy';
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -32,18 +29,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the user challenge
-    const [userChallenge] = await db
-      .select()
-      .from(userChallenges)
-      .where(
-        and(
-          eq(userChallenges.id, userChallengeId),
-          eq(userChallenges.userId, user.id)
-        )
-      )
-      .limit(1);
+    const { data: userChallenge, error: challengeError } = await supabase
+      .from('user_challenges')
+      .select('*')
+      .eq('id', userChallengeId)
+      .eq('user_id', user.id)
+      .single();
 
-    if (!userChallenge) {
+    if (challengeError || !userChallenge) {
       return NextResponse.json(
         { error: 'Reto no encontrado' },
         { status: 404 }
@@ -58,13 +51,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get challenge details
-    const [challenge] = await db
-      .select()
-      .from(challenges)
-      .where(eq(challenges.id, userChallenge.challengeId))
-      .limit(1);
+    const { data: challenge, error: challengeDetailsError } = await supabase
+      .from('challenges')
+      .select('*')
+      .eq('id', userChallenge.challenge_id)
+      .single();
 
-    if (!challenge) {
+    if (challengeDetailsError || !challenge) {
       return NextResponse.json(
         { error: 'Reto no encontrado' },
         { status: 404 }
@@ -72,84 +65,124 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user challenge to completed
-    await db
-      .update(userChallenges)
-      .set({
+    const { error: updateChallengeError } = await supabase
+      .from('user_challenges')
+      .update({
         status: 'completed',
-        completedAt: new Date(),
-        sessionData: sessionData || userChallenge.sessionData,
+        completed_at: new Date().toISOString(),
+        session_data: sessionData || userChallenge.session_data,
       })
-      .where(eq(userChallenges.id, userChallengeId));
+      .eq('id', userChallengeId);
 
-    // Award coins to user
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.userId, user.id))
-      .limit(1);
+    if (updateChallengeError) {
+      throw updateChallengeError;
+    }
 
-    if (!profile) {
+    // Get user
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData) {
       return NextResponse.json(
-        { error: 'Perfil no encontrado' },
+        { error: 'Usuario no encontrado' },
         { status: 404 }
       );
     }
 
     // Update coins, streak, and avatar energy
-    const newCoins = profile.coins + challenge.reward;
-    const newStreak = profile.streak + 1;
+    const newCoins = userData.coins + challenge.reward;
+    const newStreak = userData.streak + 1;
     const newEnergy = updateEnergyOnChallengeComplete(
-      profile.avatarEnergy,
+      userData.avatar_energy,
       challenge.type as 'daily' | 'focus' | 'social'
     );
 
-    await db
-      .update(profiles)
-      .set({
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({
         coins: newCoins,
         streak: newStreak,
-        avatarEnergy: newEnergy,
-        updatedAt: new Date(),
+        avatar_energy: newEnergy,
+        updated_at: new Date().toISOString(),
       })
-      .where(eq(profiles.userId, user.id));
+      .eq('id', user.id);
+
+    if (updateUserError) {
+      throw updateUserError;
+    }
 
     // Create transaction record
-    await db.insert(transactions).values({
-      userId: user.id,
+    await supabase.from('transactions').insert({
+      user_id: user.id,
       amount: challenge.reward,
       type: 'earn',
       description: `Reto completado: ${challenge.title}`,
-      challengeId: challenge.id,
-      createdAt: new Date(),
+      challenge_id: challenge.id,
     });
 
     // Create focus session record if it's a focus challenge
     if (challenge.type === 'focus' && sessionData) {
-      await db.insert(focusSessions).values({
-        userChallengeId: userChallenge.id,
-        durationSeconds: sessionData.durationSeconds || 0,
+      await supabase.from('focus_sessions').insert({
+        user_challenge_id: userChallenge.id,
+        duration_seconds: sessionData.durationSeconds || 0,
         interruptions: sessionData.interruptions || 0,
-        completedSuccessfully: true,
-        createdAt: new Date(),
+        completed_successfully: true,
       });
     }
 
-    // Create feed item if image and note are provided
+    // Create feed item if note is provided (image is optional)
     let feedItem = null;
-    if (imageUrl && note) {
-      [feedItem] = await db.insert(feedItems).values({
-        userId: user.id,
-        userChallengeId: userChallenge.id,
-        imageUrl,
-        note,
-        createdAt: new Date(),
-      }).returning();
+    if (note) {
+      const { data: newFeedItem, error: feedError } = await supabase
+        .from('feed_items')
+        .insert({
+          user_id: user.id,
+          user_challenge_id: userChallenge.id,
+          image_url: imageUrl || null,
+          note,
+        })
+        .select()
+        .single();
+
+      if (!feedError && newFeedItem) {
+        feedItem = {
+          id: newFeedItem.id,
+          userId: newFeedItem.user_id,
+          userChallengeId: newFeedItem.user_challenge_id,
+          imageUrl: newFeedItem.image_url,
+          note: newFeedItem.note,
+          likesCount: newFeedItem.likes_count,
+          commentsCount: newFeedItem.comments_count,
+          createdAt: newFeedItem.created_at,
+        };
+      }
     }
 
     return NextResponse.json({
       success: true,
-      userChallenge,
-      challenge,
+      userChallenge: {
+        id: userChallenge.id,
+        userId: userChallenge.user_id,
+        challengeId: userChallenge.challenge_id,
+        status: 'completed',
+        startedAt: userChallenge.started_at,
+        completedAt: new Date().toISOString(),
+        sessionData: sessionData || userChallenge.session_data,
+        createdAt: userChallenge.created_at,
+      },
+      challenge: {
+        id: challenge.id,
+        type: challenge.type,
+        title: challenge.title,
+        description: challenge.description,
+        reward: challenge.reward,
+        durationMinutes: challenge.duration_minutes,
+        isActive: challenge.is_active,
+        createdAt: challenge.created_at,
+      },
       coinsEarned: challenge.reward,
       newCoins,
       newStreak,
@@ -164,4 +197,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

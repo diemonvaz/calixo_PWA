@@ -28,15 +28,16 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session if it exists
+  // Refresh session if it exists - getUser() automatically refreshes the session
+  // This is important for session persistence across page loads
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
   // Protect routes that require authentication
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
   const isProtectedRoute = 
-    request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname.startsWith('/profile') ||
     request.nextUrl.pathname.startsWith('/challenges') ||
     request.nextUrl.pathname.startsWith('/admin');
@@ -50,9 +51,9 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && isAuthPage) {
-    // Redirect to dashboard if already authenticated and trying to access auth pages
+    // Redirect to home (feed) if already authenticated and trying to access auth pages
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    url.pathname = '/';
     return NextResponse.redirect(url);
   }
 

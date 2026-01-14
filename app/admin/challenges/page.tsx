@@ -19,8 +19,8 @@ export default async function AdminChallengesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-dark-navy mb-2">Gestión de Retos</h2>
-          <p className="text-neutral-gray">
+          <h2 className="text-3xl font-bold text-text-dark font-serif mb-2">Gestión de Retos</h2>
+          <p className="text-neutral">
             Crea, edita y gestiona los retos del catálogo
           </p>
         </div>
@@ -33,42 +33,42 @@ export default async function AdminChallengesPage() {
       <Card className="p-6">
         <div className="space-y-4">
           {allChallenges.length === 0 ? (
-            <p className="text-neutral-gray text-center py-8">
+            <p className="text-neutral text-center py-8">
               No hay retos en el catálogo. Crea el primero.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-neutral-gray/20">
-                    <th className="text-left py-3 px-4 font-medium text-dark-navy">ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-dark-navy">Título</th>
-                    <th className="text-left py-3 px-4 font-medium text-dark-navy">Tipo</th>
-                    <th className="text-left py-3 px-4 font-medium text-dark-navy">Recompensa</th>
-                    <th className="text-left py-3 px-4 font-medium text-dark-navy">Estado</th>
-                    <th className="text-left py-3 px-4 font-medium text-dark-navy">Acciones</th>
+                  <tr className="border-b border-neutral/20">
+                    <th className="text-left py-3 px-4 font-medium text-text-dark font-serif">ID</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-dark font-serif">Título</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-dark font-serif">Tipo</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-dark font-serif">Recompensa</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-dark font-serif">Estado</th>
+                    <th className="text-left py-3 px-4 font-medium text-text-dark font-serif">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {allChallenges.map((challenge) => (
-                    <tr key={challenge.id} className="border-b border-neutral-gray/10">
-                      <td className="py-3 px-4 text-neutral-gray">{challenge.id}</td>
-                      <td className="py-3 px-4 font-medium text-dark-navy">
+                    <tr key={challenge.id} className="border-b border-neutral/10">
+                      <td className="py-3 px-4 text-neutral">{challenge.id}</td>
+                      <td className="py-3 px-4 font-medium text-text-dark font-serif">
                         {challenge.title}
                       </td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-soft-blue/10 text-soft-blue rounded-lg text-sm">
+                        <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-sm">
                           {challenge.type}
                         </span>
                       </td>
                       <td className="py-3 px-4">{challenge.reward} 🪙</td>
                       <td className="py-3 px-4">
                         {challenge.isActive ? (
-                          <span className="px-2 py-1 bg-accent-green/10 text-accent-green rounded-lg text-sm">
+                          <span className="px-2 py-1 bg-complementary-emerald/10 text-complementary-emerald rounded-lg text-sm">
                             Activo
                           </span>
                         ) : (
-                          <span className="px-2 py-1 bg-neutral-gray/10 text-neutral-gray rounded-lg text-sm">
+                          <span className="px-2 py-1 bg-neutral-gray/10 text-neutral rounded-lg text-sm">
                             Inactivo
                           </span>
                         )}
@@ -76,7 +76,7 @@ export default async function AdminChallengesPage() {
                       <td className="py-3 px-4">
                         <Link
                           href={`/admin/challenges/${challenge.id}/edit`}
-                          className="text-soft-blue hover:underline text-sm"
+                          className="text-primary hover:underline text-sm"
                         >
                           Editar
                         </Link>

@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { userChallenges, focusSessions } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * POST /api/challenges/fail
@@ -10,7 +7,7 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -31,18 +28,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the user challenge
-    const [userChallenge] = await db
-      .select()
-      .from(userChallenges)
-      .where(
-        and(
-          eq(userChallenges.id, userChallengeId),
-          eq(userChallenges.userId, user.id)
-        )
-      )
-      .limit(1);
+    const { data: userChallenge, error: challengeError } = await supabase
+      .from('user_challenges')
+      .select('*')
+      .eq('id', userChallengeId)
+      .eq('user_id', user.id)
+      .single();
 
-    if (!userChallenge) {
+    if (challengeError || !userChallenge) {
       return NextResponse.json(
         { error: 'Reto no encontrado' },
         { status: 404 }
@@ -58,28 +51,31 @@ export async function POST(request: NextRequest) {
 
     // Update user challenge to failed
     const updatedSessionData = {
-      ...userChallenge.sessionData,
+      ...(userChallenge.session_data || {}),
       ...sessionData,
       failureReason: reason,
     };
 
-    await db
-      .update(userChallenges)
-      .set({
+    const { error: updateError } = await supabase
+      .from('user_challenges')
+      .update({
         status: 'failed',
-        failedAt: new Date(),
-        sessionData: updatedSessionData,
+        failed_at: new Date().toISOString(),
+        session_data: updatedSessionData,
       })
-      .where(eq(userChallenges.id, userChallengeId));
+      .eq('id', userChallengeId);
+
+    if (updateError) {
+      throw updateError;
+    }
 
     // Create focus session record if it's a focus challenge
     if (sessionData) {
-      await db.insert(focusSessions).values({
-        userChallengeId: userChallenge.id,
-        durationSeconds: sessionData.durationSeconds || 0,
+      await supabase.from('focus_sessions').insert({
+        user_challenge_id: userChallenge.id,
+        duration_seconds: sessionData.durationSeconds || 0,
         interruptions: sessionData.interruptions || 0,
-        completedSuccessfully: false,
-        createdAt: new Date(),
+        completed_successfully: false,
       });
     }
 
@@ -95,9 +91,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-
-
-
-
-

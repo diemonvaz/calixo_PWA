@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AvatarPreview } from '@/components/avatar/avatar-preview';
 import { FeedPost } from '@/components/feed/feed-post';
+import { useToast } from '@/components/ui/toast';
 
 interface UserProfile {
   profile: {
@@ -30,6 +31,7 @@ interface UserProfile {
 
 export default function PublicProfilePage({ params }: { params: { userId: string } }) {
   const router = useRouter();
+  const toast = useToast();
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -68,9 +70,9 @@ export default function PublicProfilePage({ params }: { params: { userId: string
       }
 
       setIsFollowing(!isFollowing);
-      alert(isFollowing ? '❌ Dejaste de seguir al usuario' : '✅ Ahora sigues a este usuario');
+      toast.success(isFollowing ? 'Dejaste de seguir al usuario' : 'Ahora sigues a este usuario');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al seguir');
+      toast.error(err instanceof Error ? err.message : 'Error al seguir');
     }
   };
 
@@ -88,16 +90,6 @@ export default function PublicProfilePage({ params }: { params: { userId: string
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/feed')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-        </div>
 
         {/* Error/Coming Soon Message */}
         <Card>

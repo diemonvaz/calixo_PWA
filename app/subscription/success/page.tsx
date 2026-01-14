@@ -63,7 +63,7 @@ export default function SubscriptionSuccessPage() {
 
           <div className="border-t pt-6 space-y-4">
             <Button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/')}
               className="w-full bg-purple-600 hover:bg-purple-700"
               size="lg"
             >

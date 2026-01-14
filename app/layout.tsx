@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
-import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { SkipLink } from "@/components/a11y/SkipLink";
-import { Footer } from "@/components/layout/footer";
+import { MainNavigation } from "@/components/layout/main-navigation";
+import { ToastProvider } from "@/components/ui/toast";
+import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 
 export const metadata: Metadata = {
   title: "Calixo - Desconexión Digital",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  themeColor: "#5A8DEE",
+  themeColor: "#fe4b5b",
   viewport: {
     width: "device-width",
     initialScale: 1,
@@ -31,22 +32,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className="light" style={{ colorScheme: 'light' }}>
       <head>
-        <link rel="icon" href="/icons/favicon.ico" />
+        <link rel="icon" href="/icons/icon.png" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet" />
       </head>
       <body className="flex flex-col min-h-screen">
-        <SkipLink />
-        <div id="main-content" className="flex-1">
-          <ServiceWorkerRegister />
-          <InstallPrompt />
-          {children}
-        </div>
-        <Footer />
+        <ToastProvider>
+          <ConfirmDialogProvider>
+            <SkipLink />
+            <MainNavigation />
+            <div id="main-content" className="flex-1 pb-16 md:pb-0">
+              <ServiceWorkerRegister />
+              {children}
+            </div>
+          </ConfirmDialogProvider>
+        </ToastProvider>
       </body>
     </html>
   );

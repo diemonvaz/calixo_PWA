@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AvatarPreview } from '@/components/avatar/avatar-preview';
 import { CategorySelector } from '@/components/avatar/category-selector';
+import { useToast } from '@/components/ui/toast';
 
 interface ProfileData {
   avatarEnergy: number;
@@ -46,6 +47,7 @@ const categories = ['color', 'shirt', 'hat', 'glasses', 'background', 'accessori
 
 export default function AvatarEditorPage() {
   const router = useRouter();
+  const toast = useToast();
   const [avatarData, setAvatarData] = useState<AvatarData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -154,7 +156,7 @@ export default function AvatarEditorPage() {
       await fetchAvatarData();
       
       // Show success message
-      alert(`✅ ¡${item.name} desbloqueado! -${item.price} monedas`);
+      toast.success(`¡${item.name} desbloqueado! -${item.price} monedas`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al comprar');
     }
@@ -201,19 +203,11 @@ export default function AvatarEditorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-          
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            🎨 Editor de Avatar CALI
+            Editor de Avatar CALI
           </h1>
           <p className="text-gray-600">
             Personaliza tu avatar con accesorios únicos

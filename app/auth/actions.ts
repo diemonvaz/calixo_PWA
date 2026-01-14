@@ -1,10 +1,11 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { z } from 'zod';
 import { loginSchema, signupSchema, resetPasswordSchema } from '@/lib/validations/auth';
-import { db, profiles } from '@/db';
 
 export type AuthActionState = {
   error?: string;
@@ -13,7 +14,7 @@ export type AuthActionState = {
 };
 
 /**
- * Sign in with email and password
+ * Sign in with email/username and password
  */
 export async function login(
   _prevState: AuthActionState,
@@ -22,7 +23,7 @@ export async function login(
   try {
     // Validate input
     const validatedFields = loginSchema.safeParse({
-      email: formData.get('email'),
+      emailOrUsername: formData.get('emailOrUsername'),
       password: formData.get('password'),
     });
 
@@ -33,10 +34,52 @@ export async function login(
       };
     }
 
-    const { email, password } = validatedFields.data;
+    const { emailOrUsername, password } = validatedFields.data;
     const supabase = await createClient();
 
-    // Sign in
+    // Determine if input is email or username
+    const isEmail = emailOrUsername.includes('@');
+    let email = emailOrUsername;
+
+    // If it's a username, find the user's email
+    if (!isEmail) {
+      // Search for user by display_name
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('display_name', emailOrUsername)
+        .single();
+
+      if (userError || !userData) {
+        return {
+          error: 'Credenciales inválidas. Por favor verifica tu nombre de usuario y contraseña.',
+          success: false,
+        };
+      }
+
+      // Get email from auth.users using Admin API
+      try {
+        const adminClient = createServiceRoleClient();
+        const { data: authUser, error: authError } = await adminClient.auth.admin.getUserById(userData.id);
+        
+        if (authError || !authUser?.user?.email) {
+          return {
+            error: 'Credenciales inválidas. Por favor verifica tu nombre de usuario y contraseña.',
+            success: false,
+          };
+        }
+
+        email = authUser.user.email;
+      } catch (adminError) {
+        console.error('Error getting user email:', adminError);
+        return {
+          error: 'Error al obtener la información del usuario. Por favor intenta de nuevo.',
+          success: false,
+        };
+      }
+    }
+
+    // Sign in with email
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -44,12 +87,41 @@ export async function login(
 
     if (error) {
       return {
-        error: 'Credenciales inválidas. Por favor verifica tu correo y contraseña.',
+        error: 'Credenciales inválidas. Por favor verifica tus credenciales.',
         success: false,
       };
     }
 
-    redirect('/dashboard');
+    // Get redirect URL from form data or headers
+    const redirectParam = formData.get('redirect') as string | null;
+    let redirectTo = '/';
+    
+    if (redirectParam) {
+      redirectTo = redirectParam;
+    } else {
+      // Fallback to checking referer header
+      try {
+        const headersList = await headers();
+        const referer = headersList.get('referer') || '';
+        if (referer) {
+          const refererUrl = new URL(referer);
+          const redirectFromUrl = refererUrl.searchParams.get('redirect');
+          if (redirectFromUrl) {
+            redirectTo = redirectFromUrl;
+          }
+        }
+      } catch {
+        // If headers() fails, use default
+      }
+    }
+
+    // Revalidate paths to ensure fresh data after login
+    revalidatePath('/');
+    revalidatePath('/feed');
+    revalidatePath('/profile');
+    revalidatePath(redirectTo);
+
+    redirect(redirectTo);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return {
@@ -115,21 +187,29 @@ export async function signup(
       };
     }
 
-    // Create user profile
+    // Create user record (Supabase trigger should handle this, but we do it here as backup)
     try {
-      await db.insert(profiles).values({
-        userId: data.user.id,
-        displayName: displayName,
-        avatarEnergy: 100,
-        isPrivate: false,
-        isPremium: false,
-        coins: 0,
-        streak: 0,
-      });
-    } catch (profileError) {
-      console.error('Error creating profile:', profileError);
-      // El usuario se creó pero el perfil falló - esto no debería bloquear el registro
-      // El perfil se puede crear más tarde si es necesario
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: data.user.id,
+          display_name: displayName,
+          avatar_energy: 100,
+          is_private: false,
+          is_premium: false,
+          coins: 0,
+          streak: 0,
+        });
+
+      if (userError) {
+        console.error('Error creating user:', userError);
+        // El usuario de auth se creó pero el registro falló - esto no debería bloquear el registro
+        // El registro se puede crear más tarde si es necesario
+      }
+    } catch (userError) {
+      console.error('Error creating user:', userError);
+      // El usuario de auth se creó pero el registro falló - esto no debería bloquear el registro
+      // El registro se puede crear más tarde si es necesario
     }
 
     return {

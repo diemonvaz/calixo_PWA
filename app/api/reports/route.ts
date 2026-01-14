@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { reports } from '@/db/schema';
 import { z } from 'zod';
 
 const reportSchema = z.object({
@@ -37,19 +35,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [newReport] = await db
-      .insert(reports)
-      .values({
-        reporterId: user.id,
-        reportedUserId: validatedData.reportedUserId || null,
-        feedItemId: validatedData.feedItemId || null,
+    const { data: newReport, error: insertError } = await supabase
+      .from('reports')
+      .insert({
+        reporter_id: user.id,
+        reported_user_id: validatedData.reportedUserId || null,
+        feed_item_id: validatedData.feedItemId || null,
         reason: validatedData.reason,
         description: validatedData.description || null,
         status: 'pending',
       })
-      .returning();
+      .select()
+      .single();
 
-    return NextResponse.json(newReport, { status: 201 });
+    if (insertError || !newReport) {
+      throw insertError;
+    }
+
+    return NextResponse.json({
+      id: newReport.id,
+      reporterId: newReport.reporter_id,
+      reportedUserId: newReport.reported_user_id,
+      feedItemId: newReport.feed_item_id,
+      reason: newReport.reason,
+      description: newReport.description,
+      status: newReport.status,
+      createdAt: newReport.created_at,
+    }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

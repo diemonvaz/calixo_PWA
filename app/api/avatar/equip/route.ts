@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { avatarCustomizations } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * POST /api/avatar/equip
@@ -10,7 +7,7 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -31,16 +28,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the customization
-    const [customization] = await db
-      .select()
-      .from(avatarCustomizations)
-      .where(and(
-        eq(avatarCustomizations.userId, user.id),
-        eq(avatarCustomizations.itemId, itemId)
-      ))
-      .limit(1);
+    const { data: customization, error: customError } = await supabase
+      .from('avatar_customizations')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('item_id', itemId)
+      .single();
 
-    if (!customization) {
+    if (customError || !customization) {
       return NextResponse.json(
         { error: 'No tienes este item desbloqueado' },
         { status: 404 }
@@ -49,23 +44,23 @@ export async function POST(request: NextRequest) {
 
     // If equipping, unequip other items in the same category
     if (equipped) {
-      await db
-        .update(avatarCustomizations)
-        .set({ equipped: false })
-        .where(and(
-          eq(avatarCustomizations.userId, user.id),
-          eq(avatarCustomizations.category, customization.category)
-        ));
+      await supabase
+        .from('avatar_customizations')
+        .update({ equipped: false })
+        .eq('user_id', user.id)
+        .eq('category', customization.category);
     }
 
     // Update the item
-    await db
-      .update(avatarCustomizations)
-      .set({ equipped })
-      .where(and(
-        eq(avatarCustomizations.userId, user.id),
-        eq(avatarCustomizations.itemId, itemId)
-      ));
+    const { error: updateError } = await supabase
+      .from('avatar_customizations')
+      .update({ equipped })
+      .eq('user_id', user.id)
+      .eq('item_id', itemId);
+
+    if (updateError) {
+      throw updateError;
+    }
 
     return NextResponse.json({
       success: true,

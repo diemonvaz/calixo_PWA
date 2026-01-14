@@ -1,7 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { adminUsers } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 
 export type AdminRole = 'admin' | 'moderator';
 
@@ -26,17 +23,17 @@ export async function checkAdminPermissions(): Promise<AdminPermission> {
       return { isAdmin: false, isModerator: false, role: null };
     }
 
-    const adminUser = await db
-      .select()
-      .from(adminUsers)
-      .where(eq(adminUsers.userId, user.id))
-      .limit(1);
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
 
-    if (adminUser.length === 0) {
+    if (!adminUser) {
       return { isAdmin: false, isModerator: false, role: null };
     }
 
-    const role = adminUser[0].role as AdminRole;
+    const role = adminUser.role as AdminRole;
     return {
       isAdmin: role === 'admin',
       isModerator: role === 'moderator' || role === 'admin',

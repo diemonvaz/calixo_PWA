@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { db } from '@/db';
-import { challenges, userChallenges, profiles, config } from '@/db/schema';
-import { eq, and, gte, lt } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/challenges
@@ -11,7 +8,7 @@ import { eq, and, gte, lt } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -25,100 +22,109 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') as 'daily' | 'focus' | 'social' | null;
 
-    // Get user profile to check if premium
-    const [userProfile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.userId, user.id))
-      .limit(1);
+    // Build query for challenges
+    let query = supabase
+      .from('challenges')
+      .select('*')
+      .eq('is_active', true);
 
-    if (!userProfile) {
-      return NextResponse.json(
-        { error: 'Perfil no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    // Get configuration for daily challenge limits
-    const [dailyFreeLimit] = await db
-      .select()
-      .from(config)
-      .where(eq(config.key, 'daily_free_challenges'))
-      .limit(1);
-
-    const [dailyPremiumLimit] = await db
-      .select()
-      .from(config)
-      .where(eq(config.key, 'daily_premium_challenges'))
-      .limit(1);
-
-    const maxDailyChallenges = userProfile.isPremium
-      ? (dailyPremiumLimit?.value as number) || 3
-      : (dailyFreeLimit?.value as number) || 1;
-
-    // Get today's challenges count
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const todaysChallenges = await db
-      .select()
-      .from(userChallenges)
-      .where(
-        and(
-          eq(userChallenges.userId, user.id),
-          gte(userChallenges.createdAt, today),
-          lt(userChallenges.createdAt, tomorrow)
-        )
-      );
-
-    // Build query conditions
-    let whereConditions = [eq(challenges.isActive, true)];
     if (type) {
-      whereConditions.push(eq(challenges.type, type));
+      query = query.eq('type', type);
     }
 
-    // Get available challenges
-    const availableChallenges = await db
-      .select()
-      .from(challenges)
-      .where(and(...whereConditions));
+    const { data: availableChallenges, error: challengesError } = await query;
+
+    if (challengesError) {
+      console.error('Error fetching challenges from database:', challengesError);
+      throw challengesError;
+    }
+
+    console.log('Available challenges from DB:', availableChallenges);
+    console.log('Type filter:', type);
+    console.log('Number of challenges found:', availableChallenges?.length || 0);
+
+    // Try to get user profile (optional for MVP)
+    let userProfile = null;
+    let maxDailyChallenges = 1;
+    let todaysChallengesCount = 0;
+
+    try {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (userData) {
+        userProfile = userData;
+        maxDailyChallenges = userData.is_premium ? 3 : 1;
+
+        // Get today's challenges count (optional)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const { data: todaysChallenges } = await supabase
+          .from('user_challenges')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('created_at', today.toISOString())
+          .lt('created_at', tomorrow.toISOString());
+
+        todaysChallengesCount = todaysChallenges?.length || 0;
+      }
+    } catch (profileError) {
+      // Profile table might not exist yet, use defaults
+      console.log('Profile table not available, using defaults');
+    }
+
+    // Ensure we have an array
+    const challenges = Array.isArray(availableChallenges) ? availableChallenges : [];
+    
+    console.log('Processing challenges:', challenges.length);
 
     // Add metadata to challenges
-    const challengesWithMetadata = availableChallenges.map((challenge) => {
+    const challengesWithMetadata = challenges.map((challenge) => {
       let canStart = true;
       let reason = '';
 
-      if (challenge.type === 'daily') {
-        const dailyChallengesCount = todaysChallenges.filter((uc) => {
-          const ch = availableChallenges.find((c) => c.id === uc.challengeId);
-          return ch?.type === 'daily';
-        }).length;
-
+      if (challenge.type === 'daily' && userProfile) {
+        const dailyChallengesCount = todaysChallengesCount;
         if (dailyChallengesCount >= maxDailyChallenges) {
           canStart = false;
-          reason = userProfile.isPremium
+          reason = userProfile.is_premium
             ? 'Has alcanzado el límite de retos diarios (3)'
             : 'Has alcanzado el límite de retos diarios gratuitos (1). Actualiza a Premium para más retos.';
         }
       }
 
       return {
-        ...challenge,
+        id: challenge.id,
+        type: challenge.type,
+        title: challenge.title,
+        description: challenge.description,
+        reward: challenge.reward,
+        durationMinutes: challenge.duration_minutes,
+        isActive: challenge.is_active,
+        createdAt: challenge.created_at,
         canStart,
         reason,
       };
     });
 
-    return NextResponse.json({
+    const response = {
       challenges: challengesWithMetadata,
       userProfile: {
-        isPremium: userProfile.isPremium,
+        isPremium: userProfile?.is_premium || false,
         maxDailyChallenges,
-        todaysChallengesCount: todaysChallenges.length,
+        todaysChallengesCount,
       },
-    });
+    };
+
+    console.log('Sending response with', challengesWithMetadata.length, 'challenges');
+    
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching challenges:', error);
     return NextResponse.json(

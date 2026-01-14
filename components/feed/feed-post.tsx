@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
+import { FeedComments } from './feed-comments';
 
 interface FeedPostProps {
   post: {
@@ -29,13 +30,15 @@ interface FeedPostProps {
       reward: number;
     } | null;
   };
+  currentUserId?: string;
   onLike?: (feedItemId: number) => void;
-  onComment?: (feedItemId: number) => void;
+  onCommentAdded?: () => void;
 }
 
-export function FeedPost({ post, onLike, onComment }: FeedPostProps) {
+export function FeedPost({ post, currentUserId, onLike, onCommentAdded }: FeedPostProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(post.feedItem.likesCount);
+  const [localCommentsCount, setLocalCommentsCount] = useState(post.feedItem.commentsCount);
 
   const handleLike = () => {
     if (onLike) {
@@ -45,9 +48,10 @@ export function FeedPost({ post, onLike, onComment }: FeedPostProps) {
     }
   };
 
-  const handleComment = () => {
-    if (onComment) {
-      onComment(post.feedItem.id);
+  const handleCommentAdded = () => {
+    setLocalCommentsCount(prev => prev + 1);
+    if (onCommentAdded) {
+      onCommentAdded();
     }
   };
 
@@ -119,7 +123,7 @@ export function FeedPost({ post, onLike, onComment }: FeedPostProps) {
 
       {/* Image */}
       {post.feedItem.imageUrl && (
-        <div className="relative w-full aspect-square bg-gray-100">
+        <div className="relative w-full md:max-w-md md:mx-auto aspect-square bg-gray-100">
           <Image
             src={post.feedItem.imageUrl}
             alt="Post image"
@@ -160,9 +164,8 @@ export function FeedPost({ post, onLike, onComment }: FeedPostProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleComment}
           >
-            💬 {post.feedItem.commentsCount}
+            💬 {localCommentsCount}
           </Button>
         </div>
         
@@ -170,6 +173,17 @@ export function FeedPost({ post, onLike, onComment }: FeedPostProps) {
           🔗 Compartir
         </Button>
       </CardFooter>
+
+      {/* Comments Section */}
+      {currentUserId && (
+        <div className="px-6 pb-4">
+          <FeedComments
+            feedItemId={post.feedItem.id}
+            currentUserId={currentUserId}
+            onCommentAdded={handleCommentAdded}
+          />
+        </div>
+      )}
     </Card>
   );
 }

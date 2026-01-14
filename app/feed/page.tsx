@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FeedPost } from '@/components/feed/feed-post';
+import { useToast } from '@/components/ui/toast';
 
 interface FeedPost {
   feedItem: {
@@ -41,6 +42,7 @@ interface FeedData {
 
 export default function FeedPage() {
   const router = useRouter();
+  const toast = useToast();
   const [feedData, setFeedData] = useState<FeedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -117,11 +119,11 @@ export default function FeedPage() {
         throw new Error('Error al comentar');
       }
 
-      alert('✅ Comentario agregado');
+      toast.success('Comentario agregado');
       await fetchFeed();
     } catch (err) {
       console.error('Error commenting:', err);
-      alert('Error al comentar');
+      toast.error('Error al comentar');
     }
   };
 
@@ -138,19 +140,11 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-          
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            📱 Feed Social
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Feed Social
           </h1>
 
           {/* Feed Type Toggle */}

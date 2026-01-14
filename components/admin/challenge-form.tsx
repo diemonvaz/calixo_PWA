@@ -72,7 +72,7 @@ export function ChallengeForm({ challenge }: ChallengeFormProps) {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-dark-navy mb-2">
+          <label className="block text-sm font-medium text-text-dark mb-2">
             Tipo de Reto *
           </label>
           <select
@@ -80,7 +80,7 @@ export function ChallengeForm({ challenge }: ChallengeFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, type: e.target.value as any })
             }
-            className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+            className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             required
           >
             <option value="daily">Diario</option>
@@ -90,21 +90,21 @@ export function ChallengeForm({ challenge }: ChallengeFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-dark-navy mb-2">
+          <label className="block text-sm font-medium text-text-dark mb-2">
             Título *
           </label>
           <input
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+            className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             required
             maxLength={200}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-dark-navy mb-2">
+          <label className="block text-sm font-medium text-text-dark mb-2">
             Descripción
           </label>
           <textarea
@@ -112,13 +112,13 @@ export function ChallengeForm({ challenge }: ChallengeFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
             }
-            className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+            className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             rows={4}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-dark-navy mb-2">
+          <label className="block text-sm font-medium text-text-dark mb-2">
             Recompensa (monedas) *
           </label>
           <input
@@ -127,7 +127,7 @@ export function ChallengeForm({ challenge }: ChallengeFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, reward: parseInt(e.target.value) || 0 })
             }
-            className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+            className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             required
             min={0}
           />
@@ -135,7 +135,7 @@ export function ChallengeForm({ challenge }: ChallengeFormProps) {
 
         {formData.type === 'focus' && (
           <div>
-            <label className="block text-sm font-medium text-dark-navy mb-2">
+            <label className="block text-sm font-medium text-text-dark mb-2">
               Duración (minutos)
             </label>
             <input
@@ -147,7 +147,7 @@ export function ChallengeForm({ challenge }: ChallengeFormProps) {
                   durationMinutes: e.target.value ? parseInt(e.target.value) : null,
                 })
               }
-              className="w-full px-4 py-2 border border-neutral-gray/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-blue"
+              className="w-full px-4 py-2 border border-neutral/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               min={1}
               max={1380}
             />
@@ -162,9 +162,9 @@ export function ChallengeForm({ challenge }: ChallengeFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, isActive: e.target.checked })
             }
-            className="w-4 h-4 text-soft-blue border-neutral-gray/20 rounded focus:ring-soft-blue"
+            className="w-4 h-4 text-primary border-neutral/20 rounded focus:ring-primary"
           />
-          <label htmlFor="isActive" className="text-sm text-dark-navy">
+          <label htmlFor="isActive" className="text-sm text-text-dark">
             Reto activo (visible para usuarios)
           </label>
         </div>

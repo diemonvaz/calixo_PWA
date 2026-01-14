@@ -10,11 +10,11 @@ export default function PoliticaPrivacidadPage() {
   return (
     <main className="container mx-auto px-4 py-12 max-w-4xl">
       <div className="card">
-        <h1 className="text-3xl font-bold text-dark-navy mb-6">Política de Privacidad</h1>
+        <h1 className="text-3xl font-bold text-text-dark font-serif mb-6">Política de Privacidad</h1>
         
-        <div className="prose prose-slate max-w-none space-y-6 text-neutral-gray">
+        <div className="prose prose-slate max-w-none space-y-6 text-neutral">
           <section>
-            <p className="text-sm text-neutral-gray/80 mb-6">
+            <p className="text-sm text-neutral/80 mb-6">
               <strong>Última actualización:</strong> {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
             <p>
@@ -26,7 +26,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">1. Responsable del Tratamiento</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">1. Responsable del Tratamiento</h2>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Denominación social:</strong> CALIXO SL</li>
               <li><strong>NIF:</strong> B-XXXXXXXX</li>
@@ -37,10 +37,10 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">2. Información que Recopilamos</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">2. Información que Recopilamos</h2>
             <p>Recopilamos y procesamos los siguientes tipos de información:</p>
             
-            <h3 className="text-lg font-semibold text-dark-navy mt-6 mb-3">2.1. Información que nos proporciona directamente</h3>
+            <h3 className="text-lg font-semibold text-text-dark font-serif mt-6 mb-3">2.1. Información que nos proporciona directamente</h3>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Datos de registro:</strong> Nombre de usuario, dirección de correo electrónico y contraseña</li>
               <li><strong>Perfil:</strong> Nombre de visualización, avatar personalizado, configuración de privacidad</li>
@@ -49,19 +49,19 @@ export default function PoliticaPrivacidadPage() {
               <li><strong>Newsletter:</strong> Dirección de correo electrónico para suscripciones</li>
             </ul>
 
-            <h3 className="text-lg font-semibold text-dark-navy mt-6 mb-3">2.2. Información recopilada automáticamente</h3>
+            <h3 className="text-lg font-semibold text-text-dark font-serif mt-6 mb-3">2.2. Información recopilada automáticamente</h3>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Datos de uso:</strong> Cómo interactúa con nuestro Servicio, páginas visitadas, tiempo de permanencia</li>
               <li><strong>Datos técnicos:</strong> Dirección IP, tipo de navegador, sistema operativo, dispositivo</li>
-              <li><strong>Cookies y tecnologías similares:</strong> Ver nuestra <Link href="/legal/politica-cookies" className="text-soft-blue hover:underline">Política de Cookies</Link></li>
+              <li><strong>Cookies y tecnologías similares:</strong> Ver nuestra <Link href="/legal/politica-cookies" className="text-primary hover:underline">Política de Cookies</Link></li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">3. Base Legal y Finalidad del Tratamiento</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">3. Base Legal y Finalidad del Tratamiento</h2>
             <p>Procesamos sus datos personales basándonos en las siguientes bases legales:</p>
             
-            <h3 className="text-lg font-semibold text-dark-navy mt-6 mb-3">3.1. Ejecución del contrato</h3>
+            <h3 className="text-lg font-semibold text-text-dark font-serif mt-6 mb-3">3.1. Ejecución del contrato</h3>
             <ul className="list-disc pl-6 space-y-2">
               <li>Crear y gestionar su cuenta de usuario</li>
               <li>Procesar sus retos y desafíos</li>
@@ -69,21 +69,21 @@ export default function PoliticaPrivacidadPage() {
               <li>Procesar transacciones y pagos</li>
             </ul>
 
-            <h3 className="text-lg font-semibold text-dark-navy mt-6 mb-3">3.2. Consentimiento</h3>
+            <h3 className="text-lg font-semibold text-text-dark font-serif mt-6 mb-3">3.2. Consentimiento</h3>
             <ul className="list-disc pl-6 space-y-2">
               <li>Enviar comunicaciones de marketing y newsletter</li>
               <li>Usar cookies no esenciales</li>
               <li>Compartir datos con terceros para marketing</li>
             </ul>
 
-            <h3 className="text-lg font-semibold text-dark-navy mt-6 mb-3">3.3. Interés legítimo</h3>
+            <h3 className="text-lg font-semibold text-text-dark font-serif mt-6 mb-3">3.3. Interés legítimo</h3>
             <ul className="list-disc pl-6 space-y-2">
               <li>Mejorar nuestros servicios y experiencia del usuario</li>
               <li>Prevenir fraudes y garantizar la seguridad</li>
               <li>Análisis y estadísticas</li>
             </ul>
 
-            <h3 className="text-lg font-semibold text-dark-navy mt-6 mb-3">3.4. Cumplimiento de obligaciones legales</h3>
+            <h3 className="text-lg font-semibold text-text-dark font-serif mt-6 mb-3">3.4. Cumplimiento de obligaciones legales</h3>
             <ul className="list-disc pl-6 space-y-2">
               <li>Cumplir con obligaciones fiscales y contables</li>
               <li>Responder a solicitudes de autoridades competentes</li>
@@ -91,7 +91,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">4. Compartir Información</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">4. Compartir Información</h2>
             <p>Podemos compartir su información con:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Proveedores de servicios:</strong> Supabase (hosting y base de datos), Stripe (pagos), servicios de análisis</li>
@@ -104,7 +104,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">5. Retención de Datos</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">5. Retención de Datos</h2>
             <p>
               Conservaremos sus datos personales durante el tiempo necesario para cumplir con los fines 
               para los que fueron recopilados, incluyendo cualquier requisito legal, contable o de 
@@ -118,7 +118,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">6. Sus Derechos</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">6. Sus Derechos</h2>
             <p>De acuerdo con el RGPD, usted tiene derecho a:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Acceso:</strong> Obtener información sobre sus datos personales que procesamos</li>
@@ -136,7 +136,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">7. Seguridad</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">7. Seguridad</h2>
             <p>
               Implementamos medidas técnicas y organizativas apropiadas para proteger sus datos personales 
               contra acceso no autorizado, alteración, divulgación o destrucción. Esto incluye:
@@ -150,7 +150,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">8. Transferencias Internacionales</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">8. Transferencias Internacionales</h2>
             <p>
               Sus datos pueden ser transferidos y procesados en países fuera del Espacio Económico Europeo (EEE). 
               Cuando realizamos estas transferencias, nos aseguramos de que existan salvaguardas adecuadas, 
@@ -159,7 +159,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">9. Menores de Edad</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">9. Menores de Edad</h2>
             <p>
               Nuestro Servicio no está dirigido a menores de 16 años. No recopilamos intencionalmente 
               información personal de menores de 16 años. Si descubrimos que hemos recopilado información 
@@ -168,7 +168,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">10. Cambios a esta Política</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">10. Cambios a esta Política</h2>
             <p>
               Podemos actualizar esta Política de Privacidad ocasionalmente. Le notificaremos cualquier 
               cambio publicando la nueva política en esta página y actualizando la fecha de "Última actualización". 
@@ -177,7 +177,7 @@ export default function PoliticaPrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-dark-navy mt-8 mb-4">11. Contacto</h2>
+            <h2 className="text-xl font-semibold text-text-dark font-serif mt-8 mb-4">11. Contacto</h2>
             <p>
               Si tiene preguntas sobre esta Política de Privacidad o sobre cómo manejamos sus datos personales, 
               puede contactarnos:
@@ -194,14 +194,6 @@ export default function PoliticaPrivacidadPage() {
           </section>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-neutral-gray/20">
-          <Link 
-            href="/" 
-            className="text-soft-blue hover:underline font-medium"
-          >
-            ← Volver al inicio
-          </Link>
-        </div>
       </div>
     </main>
   );

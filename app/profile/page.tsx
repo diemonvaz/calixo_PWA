@@ -17,21 +17,43 @@ type Profile = {
   updatedAt: Date;
 };
 
+type UserChallenge = {
+  id: number;
+  challengeId: number;
+  challengeTitle: string;
+  challengeType: string;
+  reward: number;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'canceled';
+  statusDate: string;
+  startedAt?: string;
+  completedAt?: string;
+  failedAt?: string;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  
-  // Form state
-  const [displayName, setDisplayName] = useState('');
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([]);
+  const [loadingChallenges, setLoadingChallenges] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 5,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
 
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    fetchUserChallenges();
+  }, [currentPage]);
 
   const fetchProfile = async () => {
     try {
@@ -48,8 +70,6 @@ export default function ProfilePage() {
 
       const data = await response.json();
       setProfile(data.profile);
-      setDisplayName(data.profile.displayName);
-      setIsPrivate(data.profile.isPrivate);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
@@ -57,44 +77,86 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSave = async () => {
+  const fetchUserChallenges = async () => {
     try {
-      setSaving(true);
-      setError(null);
-
-      const response = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          displayName,
-          isPrivate,
-        }),
-      });
-
+      setLoadingChallenges(true);
+      const response = await fetch(`/api/profile/challenges?page=${currentPage}&limit=5`);
+      
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Error al actualizar el perfil');
+        if (response.status === 401) {
+          return;
+        }
+        throw new Error('Error al cargar los retos');
       }
 
       const data = await response.json();
-      setProfile(data.profile);
-      setEditing(false);
+      setUserChallenges(data.challenges || []);
+      setPagination(data.pagination || {
+        page: 1,
+        limit: 5,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error fetching challenges:', err);
     } finally {
-      setSaving(false);
+      setLoadingChallenges(false);
     }
   };
 
-  const handleCancel = () => {
-    if (profile) {
-      setDisplayName(profile.displayName);
-      setIsPrivate(profile.isPrivate);
+  const getChallengeTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      daily: 'Diario',
+      focus: 'Enfoque',
+      social: 'Social',
+    };
+    return labels[type] || type;
+  };
+
+  const getChallengeTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      daily: 'bg-blue-100 text-blue-800',
+      focus: 'bg-purple-100 text-purple-800',
+      social: 'bg-green-100 text-green-800',
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      pending: 'Pendiente',
+      in_progress: 'En Progreso',
+      completed: 'Completado',
+      failed: 'Fallido',
+      canceled: 'Cancelado',
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      pending: 'bg-gray-100 text-gray-800',
+      in_progress: 'bg-yellow-100 text-yellow-800',
+      completed: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+      canceled: 'bg-orange-100 text-orange-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusDateLabel = (challenge: UserChallenge) => {
+    if (challenge.status === 'completed' && challenge.completedAt) {
+      return 'Completado el';
+    } else if (challenge.status === 'failed' && challenge.failedAt) {
+      return 'Fallido el';
+    } else if (challenge.status === 'canceled') {
+      return 'Cancelado el';
+    } else if (challenge.startedAt) {
+      return 'Iniciado el';
     }
-    setEditing(false);
-    setError(null);
+    return 'Creado el';
   };
 
   if (loading) {
@@ -135,15 +197,15 @@ export default function ProfilePage() {
     profile.avatarEnergy >= 40 ? 'text-yellow-600' : 'text-red-600';
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Mi Perfil</h1>
-          <Button onClick={() => router.push('/dashboard')} variant="outline">
-            Volver al Dashboard
-          </Button>
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
+          <p className="text-gray-600 text-lg">@{profile.displayName}</p>
         </div>
 
+        {/* Error Message */}
         {error && (
           <Card className="border-red-300 bg-red-50">
             <CardContent className="pt-6">
@@ -152,73 +214,7 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>Información Personal</CardTitle>
-                <CardDescription>
-                  Gestiona tu perfil y preferencias
-                </CardDescription>
-              </div>
-              {!editing && (
-                <Button onClick={() => setEditing(true)} variant="outline" size="sm">
-                  Editar
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Display Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre de Usuario
-              </label>
-              {editing ? (
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Tu nombre"
-                />
-              ) : (
-                <p className="text-gray-900">{profile.displayName}</p>
-              )}
-            </div>
-
-            {/* Privacy */}
-            <div>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isPrivate}
-                  onChange={(e) => setIsPrivate(e.target.checked)}
-                  disabled={!editing}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">
-                  Perfil Privado
-                </span>
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                Los perfiles privados solo son visibles para tus seguidores
-              </p>
-            </div>
-
-            {editing && (
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleSave} disabled={saving}>
-                  {saving ? 'Guardando...' : 'Guardar Cambios'}
-                </Button>
-                <Button onClick={handleCancel} variant="outline" disabled={saving}>
-                  Cancelar
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+        {/* Statistics */}
         <Card>
           <CardHeader>
             <CardTitle>Estadísticas</CardTitle>
@@ -256,21 +252,97 @@ export default function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Información de la Cuenta</CardTitle>
+            <CardTitle>Mis Retos</CardTitle>
+            <CardDescription>
+              Historial de todos tus retos
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Cuenta Creada:</span>
-              <span className="text-gray-900">
-                {new Date(profile.createdAt).toLocaleDateString('es-ES')}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Última Actualización:</span>
-              <span className="text-gray-900">
-                {new Date(profile.updatedAt).toLocaleDateString('es-ES')}
-              </span>
-            </div>
+          <CardContent>
+            {loadingChallenges ? (
+              <div className="text-center py-8">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto mb-2"></div>
+                  <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+                </div>
+              </div>
+            ) : userChallenges.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No has iniciado ningún reto aún.</p>
+                <p className="text-sm mt-2">¡Comienza un reto para verlo aquí!</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {userChallenges.map((challenge) => (
+                    <div
+                      key={challenge.id}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getChallengeTypeColor(challenge.challengeType)}`}>
+                            {getChallengeTypeLabel(challenge.challengeType)}
+                          </span>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(challenge.status)}`}>
+                            {getStatusLabel(challenge.status)}
+                          </span>
+                          <h3 className="font-semibold text-gray-900">
+                            {challenge.challengeTitle}
+                          </h3>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {getStatusDateLabel(challenge)} {new Date(challenge.statusDate).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      {challenge.status === 'completed' && (
+                        <div className="ml-4 text-right">
+                          <p className="text-lg font-bold text-green-600">
+                            +{challenge.reward}
+                          </p>
+                          <p className="text-xs text-gray-500">monedas</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Paginación */}
+                {pagination.totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Mostrando {((currentPage - 1) * pagination.limit) + 1} - {Math.min(currentPage * pagination.limit, pagination.total)} de {pagination.total} retos
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={!pagination.hasPrevPage || loadingChallenges}
+                      >
+                        Anterior
+                      </Button>
+                      <span className="text-sm text-gray-600 px-2">
+                        Página {currentPage} de {pagination.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        disabled={!pagination.hasNextPage || loadingChallenges}
+                      >
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

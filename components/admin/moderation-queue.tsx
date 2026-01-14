@@ -58,13 +58,13 @@ export function ModerationQueue() {
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-neutral-gray">Cargando...</div>;
+    return <div className="text-center py-8 text-neutral">Cargando...</div>;
   }
 
   return (
     <Card className="p-6">
       {reports.length === 0 ? (
-        <div className="text-center py-8 text-neutral-gray">
+        <div className="text-center py-8 text-neutral">
           No hay reportes pendientes
         </div>
       ) : (
@@ -72,25 +72,25 @@ export function ModerationQueue() {
           {reports.map((report) => (
             <div
               key={report.id}
-              className="border border-neutral-gray/20 rounded-lg p-4 space-y-3"
+              className="border border-neutral/20 rounded-lg p-4 space-y-3"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm text-neutral-gray">
+                    <span className="text-sm text-neutral">
                       Reportado por: {report.reporterEmail || report.reporterId}
                     </span>
-                    <span className="text-xs text-neutral-gray">
+                    <span className="text-xs text-neutral">
                       {new Date(report.createdAt).toLocaleDateString('es-ES')}
                     </span>
                   </div>
-                  <p className="font-medium text-dark-navy mb-1">
+                  <p className="font-medium text-text-dark font-serif mb-1">
                     Razón: {report.reason}
                   </p>
                   {report.description && (
-                    <p className="text-sm text-neutral-gray">{report.description}</p>
+                    <p className="text-sm text-neutral">{report.description}</p>
                   )}
-                  <div className="mt-2 text-sm text-neutral-gray">
+                  <div className="mt-2 text-sm text-neutral">
                     {report.feedItemId && (
                       <span>Post ID: {report.feedItemId}</span>
                     )}

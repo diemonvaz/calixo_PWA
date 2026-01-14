@@ -77,11 +77,6 @@ export function ChallengeCompletionForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!imageFile) {
-      setError('Por favor selecciona una imagen');
-      return;
-    }
-
     if (!note.trim()) {
       setError('Por favor escribe una nota sobre tu experiencia');
       return;
@@ -91,8 +86,11 @@ export function ChallengeCompletionForm({
     setError('');
 
     try {
-      // Upload image
-      const imageUrl = await uploadImage(imageFile);
+      // Upload image if provided
+      let imageUrl = '';
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
       
       // Submit to parent
       await onSubmit(imageUrl, note);
@@ -128,7 +126,7 @@ export function ChallengeCompletionForm({
           {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium mb-2">
-              Foto de tu logro (1:1 cuadrada)
+              Foto de tu logro (opcional)
             </label>
             
             {imagePreview ? (
@@ -157,15 +155,18 @@ export function ChallengeCompletionForm({
               </div>
             ) : (
               <div
-                className="w-full aspect-square rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
+                className="w-full aspect-square rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-gray-50"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="text-center">
+                <div className="text-center px-4">
                   <div className="text-4xl mb-2">📸</div>
-                  <p className="text-sm text-gray-600">
-                    Click para seleccionar imagen
+                  <p className="text-sm text-gray-600 font-medium">
+                    Toca para tomar o seleccionar foto
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
+                    En móvil puedes usar la cámara
+                  </p>
+                  <p className="text-xs text-gray-400">
                     JPG, PNG o WEBP • Máx 5MB
                   </p>
                 </div>
@@ -176,6 +177,7 @@ export function ChallengeCompletionForm({
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
+              capture="environment"
               onChange={handleImageChange}
               className="hidden"
             />

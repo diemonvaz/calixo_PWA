@@ -4,9 +4,7 @@
  * Manages progressive unlocking of avatar categories and items
  */
 
-import { db } from '@/db';
-import { avatarCustomizations, storeItems } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 
 export interface UnlockRequirement {
   category: string;
@@ -121,23 +119,34 @@ export function getCategoryUnlockMessage(category: string): string {
  */
 export async function initializeFreeItems(userId: string): Promise<void> {
   try {
+    const supabase = createServiceRoleClient();
+    
     // Get all free items (price = 0)
-    const freeItems = await db
-      .select()
-      .from(storeItems)
-      .where(eq(storeItems.price, 0));
+    const { data: freeItems, error: itemsError } = await supabase
+      .from('store_items')
+      .select('*')
+      .eq('price', 0);
+    
+    if (itemsError) {
+      throw itemsError;
+    }
     
     // Unlock each free item for the user
-    const unlocks = freeItems.map((item) => ({
-      userId,
+    const unlocks = (freeItems || []).map((item) => ({
+      user_id: userId,
       category: item.category,
-      itemId: item.itemId,
+      item_id: item.item_id,
       equipped: false,
-      unlockedAt: new Date(),
     }));
     
     if (unlocks.length > 0) {
-      await db.insert(avatarCustomizations).values(unlocks);
+      const { error: insertError } = await supabase
+        .from('avatar_customizations')
+        .insert(unlocks);
+      
+      if (insertError) {
+        throw insertError;
+      }
     }
   } catch (error) {
     console.error('Error initializing free items:', error);

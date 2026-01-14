@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { NotificationItem } from '@/components/notifications/notification-item';
+import { useToast } from '@/components/ui/toast';
 
 interface Notification {
   id: number;
   type: string;
+  title?: string;
+  message?: string;
   payload: any;
   seen: boolean;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 interface NotificationsData {
@@ -22,6 +25,7 @@ interface NotificationsData {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const toast = useToast();
   const [data, setData] = useState<NotificationsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -77,51 +81,44 @@ export default function NotificationsPage() {
         throw new Error('Error al marcar todas');
       }
 
-      alert('✅ Todas las notificaciones marcadas como leídas');
+      toast.success('Todas las notificaciones marcadas como leídas');
       await fetchNotifications();
     } catch (err) {
-      alert('Error al marcar notificaciones');
+      toast.error('Error al marcar notificaciones');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4 pb-20 md:pb-0">
         <div className="text-center">
-          <div className="text-4xl mb-4">🔔</div>
-          <p className="text-gray-600">Cargando notificaciones...</p>
+          <div className="text-3xl md:text-4xl mb-3 md:mb-4">🔔</div>
+          <p className="text-sm md:text-base text-gray-600">Cargando notificaciones...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8 px-4 md:px-6 pb-20 md:pb-8">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="mb-4"
-          >
-            ← Volver
-          </Button>
-          
-          <div className="flex items-center justify-between">
+        <div className="mb-4 md:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                🔔 Notificaciones
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-1 md:mb-2">
+                Notificaciones
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm md:text-base text-gray-600">
                 {data?.unseenCount ? `${data.unseenCount} sin leer` : 'Al día con todo'}
               </p>
             </div>
-
             {data && data.unseenCount > 0 && (
               <Button
                 variant="outline"
                 onClick={handleMarkAllRead}
+                size="sm"
+                className="w-full sm:w-auto shrink-0"
               >
                 Marcar todas leídas
               </Button>
@@ -137,13 +134,14 @@ export default function NotificationsPage() {
         )}
 
         {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex gap-2">
+        <Card className="mb-4 md:mb-6">
+          <CardContent className="pt-4 md:pt-6 px-4 md:px-6">
+            <div className="flex gap-2 overflow-x-auto">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('all')}
+                className="whitespace-nowrap shrink-0"
               >
                 Todas ({data?.total || 0})
               </Button>
@@ -151,6 +149,7 @@ export default function NotificationsPage() {
                 variant={filter === 'unread' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('unread')}
+                className="whitespace-nowrap shrink-0"
               >
                 Sin leer ({data?.unseenCount || 0})
               </Button>
@@ -161,26 +160,27 @@ export default function NotificationsPage() {
         {/* Notifications List */}
         {!data || data.notifications.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <div className="text-6xl mb-4">📭</div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            <CardContent className="py-8 md:py-12 px-4 md:px-6 text-center">
+              <div className="text-4xl md:text-6xl mb-3 md:mb-4">📭</div>
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
                 {filter === 'unread' 
                   ? 'No tienes notificaciones sin leer'
                   : 'No tienes notificaciones'}
               </h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-sm md:text-base text-gray-600 mb-4">
                 {filter === 'unread'
                   ? '¡Estás al día con todo!'
                   : 'Las notificaciones aparecerán aquí cuando tengas actividad'}
               </p>
-              <div className="flex gap-2 justify-center">
-                <Button onClick={() => router.push('/challenges/daily')}>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Button onClick={() => router.push('/challenges/daily')} className="w-full sm:w-auto">
                   🎯 Hacer Retos
                 </Button>
                 {filter === 'unread' && (
                   <Button 
                     variant="outline"
                     onClick={() => setFilter('all')}
+                    className="w-full sm:w-auto"
                   >
                     Ver Todas
                   </Button>
@@ -189,12 +189,13 @@ export default function NotificationsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {data.notifications.map((notification) => (
               <NotificationItem
                 key={notification.id}
                 notification={notification}
                 onMarkRead={handleMarkRead}
+                onRefresh={fetchNotifications}
               />
             ))}
           </div>

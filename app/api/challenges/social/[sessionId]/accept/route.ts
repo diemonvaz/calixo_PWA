@@ -10,7 +10,7 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const supabase = await createServerClient();
@@ -23,7 +23,8 @@ export async function POST(
       );
     }
 
-    const sessionId = parseInt(params.sessionId);
+    const { sessionId: sessionIdParam } = await params;
+    const sessionId = parseInt(sessionIdParam);
 
     // Get the social session
     const [session] = await db
