@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/feed
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get feed items (exclude own posts)
+    // Get feed items (using regular client for RLS on feed_items)
     const { data: feedItems, error: feedError } = await supabase
       .from('feed_items')
       .select('*')
@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (feedError) {
+      console.error('Feed Error:', feedError);
       throw feedError;
     }
 
@@ -92,13 +93,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get unique user IDs and challenge IDs
-    const uniqueUserIds = [...new Set(feedItems.map(fi => fi.user_id))];
+    // Get unique user IDs and user challenge IDs
+    const uniqueUserIds = [...new Set(feedItems.map((fi: any) => fi.user_id))];
     const uniqueUserChallengeIds = [...new Set(
       feedItems
-        .map(fi => fi.user_challenge_id)
+        .map((fi: any) => fi.user_challenge_id)
         .filter((id): id is number => id != null && id !== undefined)
     )];
+
+    // Use service role client to bypass RLS for user_challenges and challenges
+    // These are public data related to public feed_items
+    const serviceClient = createServiceRoleClient();
 
     // Fetch related data in parallel
     const [usersResult, userChallengesResult] = await Promise.all([
@@ -107,7 +112,7 @@ export async function GET(request: NextRequest) {
         .select('*')
         .in('id', uniqueUserIds),
       uniqueUserChallengeIds.length > 0
-        ? supabase
+        ? serviceClient
             .from('user_challenges')
             .select('*')
             .in('id', uniqueUserChallengeIds)
@@ -121,17 +126,19 @@ export async function GET(request: NextRequest) {
       throw userChallengesResult.error;
     }
 
-    const usersMap = new Map((usersResult.data || []).map(u => [u.id, u]));
-    const userChallengesMap = new Map((userChallengesResult.data || []).map(uc => [uc.id, uc]));
+    const usersMap = new Map((usersResult.data || []).map((u: any) => [u.id, u]));
+    const userChallengesMap = new Map((userChallengesResult.data || []).map((uc: any) => [Number(uc.id), uc]));
 
-    // Get unique challenge IDs
+    // Get unique challenge IDs from user_challenges
     const uniqueChallengeIds = [...new Set(
-      (userChallengesResult.data || []).map(uc => uc.challenge_id).filter(Boolean)
+      (userChallengesResult.data || [])
+        .map((uc: any) => uc.challenge_id)
+        .filter((id): id is number => id != null && id !== undefined)
     )];
 
-    // Fetch challenges
+    // Fetch challenges using service role client
     const { data: challenges, error: challengesError } = uniqueChallengeIds.length > 0
-      ? await supabase
+      ? await serviceClient
           .from('challenges')
           .select('*')
           .in('id', uniqueChallengeIds)
@@ -141,17 +148,15 @@ export async function GET(request: NextRequest) {
       throw challengesError;
     }
 
-    const challengesMap = new Map((challenges || []).map(c => [c.id, c]));
+    const challengesMap = new Map((challenges || []).map((c: any) => [Number(c.id), c]));
 
     // Format results
     const formattedResults = feedItems.map((feedItem: any) => {
-      const user = usersMap.get(feedItem.user_id);
-      const userChallenge = feedItem.user_challenge_id 
-        ? userChallengesMap.get(feedItem.user_challenge_id)
-        : null;
-      const challenge = userChallenge?.challenge_id
-        ? challengesMap.get(userChallenge.challenge_id)
-        : null;
+      const user = usersMap.get(feedItem.user_id) || null;
+      const userChallengeId = feedItem.user_challenge_id ? Number(feedItem.user_challenge_id) : null;
+      const userChallenge = userChallengeId ? userChallengesMap.get(userChallengeId) || null : null;
+      const challengeId = userChallenge?.challenge_id ? Number(userChallenge.challenge_id) : null;
+      const challenge = challengeId ? challengesMap.get(challengeId) || null : null;
 
       return {
         feedItem: {

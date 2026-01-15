@@ -26,13 +26,24 @@ interface FeedPost {
   } | null;
   userChallenge: {
     id: number;
+    userId: string;
     challengeId: number;
+    status: string;
+    startedAt: string | null;
+    completedAt: string | null;
+    failedAt: string | null;
+    sessionData: any;
+    createdAt: string;
   } | null;
   challenge: {
     id: number;
-    title: string;
     type: string;
+    title: string;
+    description: string;
     reward: number;
+    durationMinutes: number;
+    isActive: boolean;
+    createdAt: string;
   } | null;
 }
 
