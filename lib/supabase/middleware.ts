@@ -4,11 +4,19 @@ import { NextResponse, type NextRequest } from 'next/server';
 /**
  * Create a Supabase client for middleware operations
  * This handles session refresh and authentication checks
+ * 
+ * Note: Middleware runs in Edge Runtime, which cannot disable SSL verification.
+ * If APP_ENV = CAJA and you're behind a VPN, the middleware may fail.
+ * Consider using Node.js runtime for routes that need SSL bypass.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+
+  // Edge Runtime doesn't support disabling SSL verification
+  // So we use the default fetch (even if APP_ENV = CAJA)
+  // The server-side clients (in server.ts) will handle SSL bypass for Node.js runtime
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
