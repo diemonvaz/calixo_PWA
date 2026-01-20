@@ -75,63 +75,88 @@ const mobileNavigationItems = [
 export function MainNavigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Optimistically assume authenticated if we're on a protected route (not auth/admin pages)
+  // This helps show the header immediately after login redirect
+  const isProtectedRoute = pathname && !pathname.startsWith('/auth') && !pathname.startsWith('/admin');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(isProtectedRoute ? true : null);
+  // If we're optimistically assuming authenticated, don't show loading state
+  const [isLoading, setIsLoading] = useState(!isProtectedRoute);
 
   useEffect(() => {
+    const supabase = createClient();
+    
+    // Set up the auth state change listener FIRST to catch immediate changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const authenticated = !!session;
+      setIsAuthenticated(authenticated);
+      setIsLoading(false);
+      
+      // Force router refresh on sign in to ensure UI updates
+      if (event === 'SIGNED_IN' && session) {
+        setTimeout(() => {
+          router.refresh();
+        }, 50);
+      }
+    });
+
+    // Check current auth state
     const checkAuth = async () => {
       try {
-        const supabase = createClient();
-        // Use getUser() instead of getSession() to ensure we get the latest session from server
-        const { data: { user } } = await supabase.auth.getUser();
-        setIsAuthenticated(!!user);
+        // Use getSession() first as it's faster
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsAuthenticated(true);
+          setIsLoading(false);
+        } else {
+          // Fallback to getUser() if no session found
+          const { data: { user } } = await supabase.auth.getUser();
+          const authenticated = !!user;
+          setIsAuthenticated(authenticated);
+          setIsLoading(false);
+          // If we're on a protected route but not authenticated, redirect to login
+          if (!authenticated && isProtectedRoute) {
+            router.push('/auth/login');
+          }
+        }
       } catch (error) {
         console.error('Error checking auth:', error);
         setIsAuthenticated(false);
-      } finally {
         setIsLoading(false);
+        if (isProtectedRoute) {
+          router.push('/auth/login');
+        }
       }
     };
 
-    checkAuth();
-
-    // Listen for auth changes
-    const supabase = createClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setIsAuthenticated(!!session);
-      // Force router refresh on sign in to ensure UI updates
-      if (event === 'SIGNED_IN' && session) {
-        // Small delay to ensure cookies are set
-        setTimeout(() => {
-          router.refresh();
-        }, 100);
-      }
-    });
+    // Check auth state
+    // If we're optimistically authenticated on a protected route, 
+    // delay the check slightly to allow cookies to sync
+    if (isProtectedRoute && isAuthenticated === true) {
+      // Delay check to allow cookies to sync after redirect
+      setTimeout(() => {
+        checkAuth().catch(() => {
+          // Silent fail - we'll rely on the auth state change listener
+        });
+      }, 200);
+    } else {
+      checkAuth();
+    }
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, [router, isProtectedRoute]);
 
-  // Also check auth when pathname changes (e.g., after redirect from login)
+  // When pathname changes to a protected route, optimistically show header
   useEffect(() => {
     if (pathname && !pathname.startsWith('/auth') && !pathname.startsWith('/admin')) {
-      const checkAuthOnRouteChange = async () => {
-        try {
-          const supabase = createClient();
-          // Use getUser() to get fresh session from server
-          const { data: { user } } = await supabase.auth.getUser();
-          setIsAuthenticated(!!user);
-          setIsLoading(false);
-        } catch (error) {
-          console.error('Error checking auth on route change:', error);
-          setIsAuthenticated(false);
-          setIsLoading(false);
-        }
-      };
-      // Small delay to ensure cookies are synced after redirect
-      const timeoutId = setTimeout(checkAuthOnRouteChange, 100);
-      return () => clearTimeout(timeoutId);
+      // Immediately show header for protected routes
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    } else if (pathname && (pathname.startsWith('/auth') || pathname.startsWith('/admin'))) {
+      // Hide header for auth/admin pages
+      setIsAuthenticated(false);
+      setIsLoading(false);
     }
   }, [pathname]);
 
