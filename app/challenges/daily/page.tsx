@@ -161,15 +161,27 @@ export default function DailyChallengesPage() {
         }
 
         try {
-          await fetch('/api/challenges/cancel', {
+          const response = await fetch('/api/challenges/cancel', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userChallengeId }),
           });
+
+          const responseData = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            console.error('Cancel error response:', responseData);
+            const errorMessage = responseData.details 
+              ? `${responseData.error}: ${responseData.details}`
+              : responseData.error || 'Error al cancelar el reto';
+            throw new Error(errorMessage);
+          }
+
+          console.log('Challenge canceled successfully:', responseData);
           toast.info('Reto cancelado');
         } catch (err) {
           console.error('Error al cancelar el reto:', err);
-          toast.error('Error al cancelar el reto');
+          toast.error(err instanceof Error ? err.message : 'Error al cancelar el reto');
         } finally {
           resetState();
         }
