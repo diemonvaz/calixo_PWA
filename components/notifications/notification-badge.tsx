@@ -1,28 +1,46 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export function NotificationBadge() {
   const [unseenCount, setUnseenCount] = useState(0);
+  const pathname = usePathname();
 
   useEffect(() => {
-    fetchUnseenCount();
+    // Solo hacer fetch si no estamos en páginas de auth o admin
+    const isAuthOrAdminPage = pathname?.startsWith('/auth') || pathname?.startsWith('/admin');
     
-    // Poll every 30 seconds
-    const interval = setInterval(fetchUnseenCount, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    if (!isAuthOrAdminPage) {
+      fetchUnseenCount();
+      
+      // Poll every 30 seconds
+      const interval = setInterval(fetchUnseenCount, 30000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [pathname]);
 
   const fetchUnseenCount = async () => {
     try {
       const response = await fetch('/api/notifications?unseenOnly=true&limit=100');
+      
+      // Si es 401, el usuario no está autenticado, simplemente no mostrar badge
+      if (response.status === 401) {
+        setUnseenCount(0);
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
         setUnseenCount(data.unseenCount || 0);
       }
     } catch (error) {
-      console.error('Error fetching unseen count:', error);
+      // Silenciar errores de red, solo loggear en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching unseen count:', error);
+      }
+      setUnseenCount(0);
     }
   };
 

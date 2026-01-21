@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const unseenOnly = searchParams.get('unseenOnly') === 'true';
+    const seenOnly = searchParams.get('seenOnly') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // Build query
@@ -31,6 +32,8 @@ export async function GET(request: NextRequest) {
 
     if (unseenOnly) {
       query = query.eq('seen', false);
+    } else if (seenOnly) {
+      query = query.eq('seen', true);
     }
 
     const { data: results, error: queryError } = await query;
@@ -39,8 +42,20 @@ export async function GET(request: NextRequest) {
       throw queryError;
     }
 
-    // Count unseen
+    // Count unseen and read from current results
     const unseenCount = (results || []).filter(n => !n.seen).length;
+    const readCount = (results || []).filter(n => n.seen).length;
+    
+    // If filtering by unseen only, also get total read count
+    let totalReadCount = readCount;
+    if (unseenOnly) {
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('seen', true);
+      totalReadCount = count || 0;
+    }
 
     // Collect user IDs from payloads to fetch user names
     const userIds = new Set<string>();
@@ -101,9 +116,20 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Calculate readCount based on filter
+    let finalReadCount: number;
+    if (unseenOnly) {
+      finalReadCount = totalReadCount;
+    } else if (seenOnly) {
+      finalReadCount = formattedResults.length;
+    } else {
+      finalReadCount = readCount;
+    }
+
     return NextResponse.json({
       notifications: formattedResults,
       unseenCount,
+      readCount: finalReadCount,
       total: formattedResults.length,
     });
   } catch (error) {

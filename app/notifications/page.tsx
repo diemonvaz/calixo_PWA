@@ -21,6 +21,7 @@ interface Notification {
 interface NotificationsData {
   notifications: Notification[];
   unseenCount: number;
+  readCount?: number;
   total: number;
 }
 
@@ -30,7 +31,7 @@ export default function NotificationsPage() {
   const [data, setData] = useState<NotificationsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [filter, setFilter] = useState<'unread' | 'read'>('unread');
 
   useEffect(() => {
     fetchNotifications();
@@ -39,7 +40,11 @@ export default function NotificationsPage() {
   const fetchNotifications = async () => {
     try {
       const params = new URLSearchParams();
-      if (filter === 'unread') params.append('unseenOnly', 'true');
+      if (filter === 'unread') {
+        params.append('unseenOnly', 'true');
+      } else if (filter === 'read') {
+        params.append('seenOnly', 'true');
+      }
       
       const response = await fetch(`/api/notifications?${params}`);
       if (!response.ok) {
@@ -136,20 +141,20 @@ export default function NotificationsPage() {
           <CardContent className="pt-4 md:pt-6 px-4 md:px-6">
             <div className="flex gap-2 overflow-x-auto">
               <Button
-                variant={filter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter('all')}
-                className="whitespace-nowrap shrink-0"
-              >
-                Todas ({data?.total || 0})
-              </Button>
-              <Button
                 variant={filter === 'unread' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('unread')}
                 className="whitespace-nowrap shrink-0"
               >
-                Sin leer ({data?.unseenCount || 0})
+                Nuevas ({data?.unseenCount || 0})
+              </Button>
+              <Button
+                variant={filter === 'read' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('read')}
+                className="whitespace-nowrap shrink-0"
+              >
+                Leídas ({filter === 'read' ? (data?.total || 0) : (data?.readCount || 0)})
               </Button>
             </div>
           </CardContent>
@@ -162,25 +167,25 @@ export default function NotificationsPage() {
               <div className="text-4xl md:text-6xl mb-3 md:mb-4">📭</div>
               <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
                 {filter === 'unread' 
-                  ? 'No tienes notificaciones sin leer'
-                  : 'No tienes notificaciones'}
+                  ? 'No tienes notificaciones nuevas'
+                  : 'No tienes notificaciones leídas'}
               </h2>
               <p className="text-sm md:text-base text-gray-600 mb-4">
                 {filter === 'unread'
                   ? '¡Estás al día con todo!'
-                  : 'Las notificaciones aparecerán aquí cuando tengas actividad'}
+                  : 'Las notificaciones leídas aparecerán aquí'}
               </p>
               <div className="flex flex-col sm:flex-row gap-2 justify-center">
                 <Button onClick={() => router.push('/challenges/daily')} className="w-full sm:w-auto">
                   🎯 Hacer Retos
                 </Button>
-                {filter === 'unread' && (
+                {filter === 'read' && (
                   <Button 
                     variant="outline"
-                    onClick={() => setFilter('all')}
+                    onClick={() => setFilter('unread')}
                     className="w-full sm:w-auto"
                   >
-                    Ver Todas
+                    Ver Nuevas
                   </Button>
                 )}
               </div>

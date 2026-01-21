@@ -75,14 +75,23 @@ const mobileNavigationItems = [
 export function MainNavigation() {
   const pathname = usePathname();
   const router = useRouter();
+  // Estado para evitar errores de hidratación
+  const [mounted, setMounted] = useState(false);
   // Optimistically assume authenticated if we're on a protected route (not auth/admin pages)
   // This helps show the header immediately after login redirect
   const isProtectedRoute = pathname && !pathname.startsWith('/auth') && !pathname.startsWith('/admin');
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(isProtectedRoute ? true : null);
-  // If we're optimistically assuming authenticated, don't show loading state
-  const [isLoading, setIsLoading] = useState(!isProtectedRoute);
+  // Estado inicial siempre null para evitar diferencias entre servidor y cliente
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Marcar como montado después de la hidratación
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+
     const supabase = createClient();
     
     // Set up the auth state change listener FIRST to catch immediate changes
@@ -131,7 +140,10 @@ export function MainNavigation() {
     // Check auth state
     // If we're optimistically authenticated on a protected route, 
     // delay the check slightly to allow cookies to sync
-    if (isProtectedRoute && isAuthenticated === true) {
+    if (isProtectedRoute) {
+      // Optimistically set authenticated for protected routes
+      setIsAuthenticated(true);
+      setIsLoading(false);
       // Delay check to allow cookies to sync after redirect
       setTimeout(() => {
         checkAuth().catch(() => {
@@ -145,10 +157,12 @@ export function MainNavigation() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [router, isProtectedRoute]);
+  }, [router, isProtectedRoute, mounted]);
 
   // When pathname changes to a protected route, optimistically show header
   useEffect(() => {
+    if (!mounted) return;
+    
     if (pathname && !pathname.startsWith('/auth') && !pathname.startsWith('/admin')) {
       // Immediately show header for protected routes
       setIsAuthenticated(true);
@@ -158,7 +172,7 @@ export function MainNavigation() {
       setIsAuthenticated(false);
       setIsLoading(false);
     }
-  }, [pathname]);
+  }, [pathname, mounted]);
 
   // No mostrar navegación en páginas de auth o admin
   if (pathname?.startsWith('/auth') || pathname?.startsWith('/admin')) {
@@ -166,7 +180,8 @@ export function MainNavigation() {
   }
 
   // No mostrar navegación mientras se carga o si no está autenticado
-  if (isLoading || !isAuthenticated) {
+  // También no mostrar hasta que el componente esté montado para evitar errores de hidratación
+  if (!mounted || isLoading || !isAuthenticated) {
     return null;
   }
 
