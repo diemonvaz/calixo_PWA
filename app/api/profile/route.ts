@@ -66,6 +66,20 @@ export async function GET() {
       userData = newUser;
     }
 
+    // Get profile photo URL if exists
+    let profilePhotoUrl: string | null = null;
+    if (userData.profile_photo_path) {
+      const pathParts = userData.profile_photo_path.split('/');
+      if (pathParts.length > 1) {
+        const bucket = pathParts[0];
+        const filePath = pathParts.slice(1).join('/');
+        const { data: { publicUrl } } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
+        profilePhotoUrl = publicUrl;
+      }
+    }
+
     return NextResponse.json({
       profile: {
         userId: userData.id,
@@ -77,6 +91,8 @@ export async function GET() {
         streak: userData.streak,
         createdAt: userData.created_at,
         updatedAt: userData.updated_at,
+        profilePhotoUrl: profilePhotoUrl,
+        profilePhotoPath: userData.profile_photo_path || null,
       }
     });
   } catch (error) {
@@ -138,6 +154,20 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Get profile photo URL if exists
+    let profilePhotoUrl: string | null = null;
+    if (updatedUser.profile_photo_path) {
+      const pathParts = updatedUser.profile_photo_path.split('/');
+      if (pathParts.length > 1) {
+        const bucket = pathParts[0];
+        const filePath = pathParts.slice(1).join('/');
+        const { data: { publicUrl } } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
+        profilePhotoUrl = publicUrl;
+      }
+    }
+
     return NextResponse.json({
       message: 'Perfil actualizado exitosamente',
       profile: {
@@ -149,6 +179,8 @@ export async function PATCH(request: NextRequest) {
         coins: updatedUser.coins,
         streak: updatedUser.streak,
         updatedAt: updatedUser.updated_at,
+        profilePhotoUrl: profilePhotoUrl,
+        profilePhotoPath: updatedUser.profile_photo_path || null,
       }
     });
   } catch (error) {

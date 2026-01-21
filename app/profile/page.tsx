@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { ProfilePhotoModal } from '@/components/profile/profile-photo-modal';
+import Image from 'next/image';
 
 type Profile = {
   userId: string;
@@ -16,6 +18,8 @@ type Profile = {
   streak: number;
   createdAt: Date;
   updatedAt: Date;
+  profilePhotoUrl?: string | null;
+  profilePhotoPath?: string | null;
 };
 
 type UserChallenge = {
@@ -39,6 +43,7 @@ export default function ProfilePage() {
   const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([]);
   const [loadingChallenges, setLoadingChallenges] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 5,
@@ -196,10 +201,47 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
-          <p className="text-gray-600 text-lg">@{profile.displayName}</p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
+            <p className="text-gray-600 text-lg">@{profile.displayName}</p>
+          </div>
+          {/* Profile Photo */}
+          <button
+            onClick={() => setIsPhotoModalOpen(true)}
+            className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-gray-300 hover:border-blue-500 transition-colors cursor-pointer bg-gray-100 flex-shrink-0"
+            aria-label="Cambiar foto de perfil"
+          >
+            {profile.profilePhotoUrl ? (
+              <Image
+                src={profile.profilePhotoUrl}
+                alt="Foto de perfil"
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <span className="text-4xl">👤</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+              <span className="text-white text-xs font-medium opacity-0 hover:opacity-100 transition-opacity">
+                Cambiar
+              </span>
+            </div>
+          </button>
         </div>
+
+        {/* Profile Photo Modal */}
+        <ProfilePhotoModal
+          isOpen={isPhotoModalOpen}
+          currentPhotoUrl={profile.profilePhotoUrl || null}
+          onClose={() => setIsPhotoModalOpen(false)}
+          onPhotoUpdated={() => {
+            fetchProfile();
+            setIsPhotoModalOpen(false);
+          }}
+        />
 
         {/* Error Message */}
         {error && (
