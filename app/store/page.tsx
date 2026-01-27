@@ -3,28 +3,26 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { StoreItemCard } from '@/components/store/store-item-card';
-import { StoreFilters } from '@/components/store/store-filters';
+import { Card, CardContent } from '@/components/ui/card';
+import { CouponCard } from '@/components/store/coupon-card';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/toast';
 import { Spinner } from '@/components/ui/spinner';
 
-interface StoreItem {
+interface Coupon {
   id: number;
-  name: string;
-  category: string;
-  itemId: string;
-  price: number;
-  premiumOnly: boolean;
-  imageUrl: string | null;
+  code: string;
+  discountPercent: number;
+  partnerName: string;
   description: string | null;
+  price: number;
+  validUntil: string;
   owned: boolean;
   canPurchase: boolean;
 }
 
 interface StoreData {
-  items: StoreItem[];
+  items: Coupon[];
   userCoins: number;
   isPremium: boolean;
   totalItems: number;
@@ -40,20 +38,15 @@ export default function StorePage() {
   const [purchasing, setPurchasing] = useState(false);
 
   // Filters
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedPremium, setSelectedPremium] = useState<string | null>(null);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchStoreData();
-  }, [selectedCategory, selectedPremium, searchQuery]);
+  }, [searchQuery]);
 
   const fetchStoreData = async () => {
     try {
       const params = new URLSearchParams();
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (selectedPremium) params.append('premiumOnly', selectedPremium);
       if (searchQuery) params.append('search', searchQuery);
 
       const response = await fetch(`/api/store?${params}`);
@@ -69,7 +62,7 @@ export default function StorePage() {
     }
   };
 
-  const handlePurchase = async (itemId: number) => {
+  const handlePurchase = async (couponId: number) => {
     if (!storeData) return;
 
     setPurchasing(true);
@@ -79,7 +72,7 @@ export default function StorePage() {
       const response = await fetch('/api/store/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId }),
+        body: JSON.stringify({ couponId }),
       });
 
       if (!response.ok) {
@@ -88,7 +81,7 @@ export default function StorePage() {
       }
 
       const data = await response.json();
-      toast.success(`¡${data.item.name} comprado! -${data.item.price} monedas`);
+      toast.success(`¡Cupón ${data.coupon.code} comprado! -${data.coupon.price} monedas`);
       
       // Refresh store data
       await fetchStoreData();
@@ -98,6 +91,7 @@ export default function StorePage() {
       setPurchasing(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -123,26 +117,16 @@ export default function StorePage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Tienda CALI
-              </h1>
-              <p className="text-gray-600">
-                Personaliza tu avatar con items únicos
-              </p>
-            </div>
+          <div className="flex justify-between items-center">
+            <h1 className="text-4xl font-bold text-gray-900">
+              Tienda
+            </h1>
 
             <div className="text-right">
               <div className="text-3xl font-bold text-yellow-600">
                 🪙 {storeData.userCoins}
               </div>
               <p className="text-sm text-gray-600">Tus monedas</p>
-              {storeData.isPremium && (
-                <span className="inline-block mt-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                  ⭐ Premium
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -154,114 +138,53 @@ export default function StorePage() {
           </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>{storeData.totalItems}</CardTitle>
-              <CardDescription>Items Disponibles</CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-green-600">{storeData.ownedCount}</CardTitle>
-              <CardDescription>Items Comprados</CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-blue-600">
-                {Math.round((storeData.ownedCount / storeData.totalItems) * 100)}%
-              </CardTitle>
-              <CardDescription>Colección Completa</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Filters Sidebar */}
-          <div className="lg:col-span-1">
-            <StoreFilters
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              selectedPremium={selectedPremium}
-              onPremiumChange={setSelectedPremium}
-              priceRange={priceRange}
-              onPriceRangeChange={setPriceRange}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
+        {/* Search Bar */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar cupones..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+          </CardContent>
+        </Card>
 
-            {/* Quick Links */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-sm">Accesos Rápidos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Link href="/avatar">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    🎨 Editor de Avatar
-                  </Button>
-                </Link>
-                <Link href="/store/transactions">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    📊 Historial
-                  </Button>
-                </Link>
-                <Link href="/challenges/daily">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    🎯 Ganar Monedas
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+        {/* Coupons Grid */}
+        {storeData.items.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <div className="text-6xl mb-4">🔍</div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                No se encontraron cupones
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Intenta ajustar los filtros o busca con otros términos
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery('');
+                }}
+              >
+                Limpiar búsqueda
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {storeData.items.map((coupon) => (
+              <CouponCard
+                key={coupon.id}
+                coupon={coupon}
+                onPurchase={handlePurchase}
+                isPurchasing={purchasing}
+              />
+            ))}
           </div>
-
-          {/* Items Grid */}
-          <div className="lg:col-span-3">
-            {storeData.items.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🔍</div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                  No se encontraron items
-                </h2>
-                <p className="text-gray-600 mb-4">
-                  Intenta ajustar los filtros
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedCategory(null);
-                    setSelectedPremium(null);
-                    setSearchQuery('');
-                  }}
-                >
-                  Limpiar filtros
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {storeData.items.map((item) => (
-                  <StoreItemCard
-                    key={item.id}
-                    item={item}
-                    onPurchase={handlePurchase}
-                    isPurchasing={purchasing}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
-
-
-
-
-
-

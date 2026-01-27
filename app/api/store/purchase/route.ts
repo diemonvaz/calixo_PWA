@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 
 /**
  * POST /api/store/purchase
- * Purchase an item from the store
+ * Comprar un cupón de la tienda
  */
 export async function POST(request: NextRequest) {
   try {
@@ -18,31 +18,41 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { itemId } = body;
+    const { couponId } = body;
 
-    if (!itemId) {
+    if (!couponId) {
       return NextResponse.json(
-        { error: 'itemId es requerido' },
+        { error: 'couponId es requerido' },
         { status: 400 }
       );
     }
 
-    // Get the store item
-    const { data: item, error: itemError } = await supabase
-      .from('store_items')
+    // Obtener el cupón
+    const { data: coupon, error: couponError } = await supabase
+      .from('coupons')
       .select('*')
-      .eq('id', itemId)
+      .eq('id', couponId)
       .eq('is_active', true)
       .single();
 
-    if (itemError || !item) {
+    if (couponError || !coupon) {
       return NextResponse.json(
-        { error: 'Item no encontrado' },
+        { error: 'Cupón no encontrado' },
         { status: 404 }
       );
     }
 
-    // Get user
+    // Verificar que el cupón no haya expirado
+    const now = new Date();
+    const validUntil = new Date(coupon.valid_until);
+    if (validUntil < now) {
+      return NextResponse.json(
+        { error: 'Este cupón ha expirado' },
+        { status: 400 }
+      );
+    }
+
+    // Obtener usuario
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -56,39 +66,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has enough coins
-    if (userData.coins < item.price) {
+    // Verificar si el usuario ya tiene este cupón
+    const { data: existingPurchase } = await supabase
+      .from('user_coupons')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('coupon_id', couponId)
+      .single();
+
+    if (existingPurchase) {
+      return NextResponse.json(
+        { error: 'Ya tienes este cupón' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que el usuario tenga suficientes monedas
+    if (userData.coins < coupon.price) {
       return NextResponse.json(
         { error: 'No tienes suficientes monedas' },
         { status: 400 }
       );
     }
 
-    // Check premium requirement
-    if (item.premium_only && !userData.is_premium) {
-      return NextResponse.json(
-        { error: 'Este item requiere cuenta Premium' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already has this item
-    const { data: existing } = await supabase
-      .from('avatar_customizations')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('item_id', item.item_id)
-      .single();
-
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Ya tienes este item' },
-        { status: 400 }
-      );
-    }
-
     // Deduct coins
-    const newCoins = userData.coins - item.price;
+    const newCoins = userData.coins - coupon.price;
     const { error: updateError } = await supabase
       .from('users')
       .update({
@@ -101,59 +103,50 @@ export async function POST(request: NextRequest) {
       throw updateError;
     }
 
-    // Create transaction record
+    // Crear registro de transacción
     await supabase.from('transactions').insert({
       user_id: user.id,
-      amount: -item.price,
+      amount: -coupon.price,
       type: 'spend',
-      item_id: item.id,
-      description: `Comprado: ${item.name}`,
+      description: `Comprado cupón: ${coupon.code} - ${coupon.partner_name}`,
+      coupon_code: coupon.code,
     });
 
-    // Unlock the item
-    const { data: customization, error: customizationError } = await supabase
-      .from('avatar_customizations')
+    // Registrar la compra del cupón
+    const { data: userCoupon, error: userCouponError } = await supabase
+      .from('user_coupons')
       .insert({
         user_id: user.id,
-        category: item.category,
-        item_id: item.item_id,
-        equipped: false,
+        coupon_id: coupon.id,
       })
       .select()
       .single();
 
-    if (customizationError || !customization) {
-      throw customizationError;
+    if (userCouponError || !userCoupon) {
+      throw userCouponError;
     }
 
     return NextResponse.json({
       success: true,
       newCoins,
-      item: {
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        itemId: item.item_id,
-        price: item.price,
-        premiumOnly: item.premium_only,
-        imageUrl: item.image_url,
-        description: item.description,
-        isActive: item.is_active,
-        createdAt: item.created_at,
+      coupon: {
+        id: coupon.id,
+        code: coupon.code,
+        discountPercent: coupon.discount_percent,
+        partnerName: coupon.partner_name,
+        description: coupon.description,
+        price: coupon.price,
+        validUntil: coupon.valid_until,
       },
-      customization: {
-        id: customization.id,
-        userId: customization.user_id,
-        category: customization.category,
-        itemId: customization.item_id,
-        equipped: customization.equipped,
-        unlockedAt: customization.unlocked_at,
+      purchase: {
+        id: userCoupon.id,
+        purchasedAt: userCoupon.purchased_at,
       },
     });
   } catch (error) {
-    console.error('Error purchasing item:', error);
+    console.error('Error purchasing coupon:', error);
     return NextResponse.json(
-      { error: 'Error al comprar item' },
+      { error: 'Error al comprar cupón' },
       { status: 500 }
     );
   }

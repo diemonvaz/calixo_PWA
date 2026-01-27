@@ -34,15 +34,25 @@ export function ProfilePhotoModal({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { showToast } = useToast();
 
-  // Reset state when modal closes
+  // Reset state when modal closes and prevent body scroll
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore body scroll when modal closes
+      document.body.style.overflow = '';
       setImageFile(null);
       setImagePreview('');
       setCroppedImage('');
       setCurrentStep('select');
       setError('');
     }
+
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   // Handle ESC key
@@ -391,11 +401,24 @@ export function ProfilePhotoModal({
   return (
     <div
       className={cn(
-        'fixed inset-0 z-[200] flex items-center justify-center p-4',
+        'fixed z-[9999] flex items-center justify-center',
         'bg-black/50 backdrop-blur-sm',
         'transition-opacity duration-300',
-        isOpen ? 'opacity-100' : 'opacity-0'
+        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
       )}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
+        minHeight: '100vh',
+        margin: 0,
+        padding: '1rem',
+        overflow: 'auto',
+      }}
       onClick={handleBackdropClick}
     >
       <Card

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/store
- * Get store items with filters
+ * Obtener cupones disponibles en la tienda
  */
 export async function GET(request: NextRequest) {
   try {
@@ -19,13 +19,10 @@ export async function GET(request: NextRequest) {
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const premiumOnly = searchParams.get('premiumOnly');
     const search = searchParams.get('search');
+    const partnerName = searchParams.get('partnerName');
 
-    // Get user
+    // Obtener usuario
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -39,99 +36,77 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build query for store items
+    // Obtener cupones activos y válidos
     let query = supabase
-      .from('store_items')
+      .from('coupons')
       .select('*')
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .gt('valid_until', new Date().toISOString())
+      .order('partner_name', { ascending: true });
 
-    if (category) {
-      query = query.eq('category', category);
+    if (partnerName) {
+      query = query.ilike('partner_name', `%${partnerName}%`);
     }
 
-    if (premiumOnly === 'true') {
-      query = query.eq('premium_only', true);
-    } else if (premiumOnly === 'false') {
-      query = query.eq('premium_only', false);
+    const { data: coupons, error: couponsError } = await query;
+
+    if (couponsError) {
+      throw couponsError;
     }
 
-    const { data: items, error: itemsError } = await query;
-
-    if (itemsError) {
-      throw itemsError;
-    }
-
-    // Apply price filters
-    let filteredItems = items || [];
-    if (minPrice) {
-      const min = parseInt(minPrice);
-      filteredItems = filteredItems.filter(item => item.price >= min);
-    }
-
-    if (maxPrice) {
-      const max = parseInt(maxPrice);
-      filteredItems = filteredItems.filter(item => item.price <= max);
-    }
-
-    // Apply search filter
+    // Aplicar filtro de búsqueda
+    let filteredCoupons = coupons || [];
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredItems = filteredItems.filter(item => 
-        item.name?.toLowerCase().includes(searchLower) ||
-        item.description?.toLowerCase().includes(searchLower)
+      filteredCoupons = filteredCoupons.filter(coupon =>
+        coupon.code?.toLowerCase().includes(searchLower) ||
+        coupon.partner_name?.toLowerCase().includes(searchLower) ||
+        coupon.description?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Get user's owned items
-    const { data: ownedItems } = await supabase
-      .from('avatar_customizations')
-      .select('item_id')
+    // Obtener cupones comprados por el usuario
+    const { data: purchasedCoupons } = await supabase
+      .from('user_coupons')
+      .select('coupon_id')
       .eq('user_id', user.id);
 
-    const ownedItemIds = new Set((ownedItems || []).map(item => item.item_id));
+    const purchasedCouponIds = new Set((purchasedCoupons || []).map(pc => pc.coupon_id));
 
-    // Add ownership status to items
-    const itemsWithStatus = filteredItems.map(item => ({
-      id: item.id,
-      name: item.name,
-      category: item.category,
-      itemId: item.item_id,
-      price: item.price,
-      premiumOnly: item.premium_only,
-      imageUrl: item.image_url,
-      description: item.description,
-      isActive: item.is_active,
-      createdAt: item.created_at,
-      owned: ownedItemIds.has(item.item_id),
-      canPurchase: !ownedItemIds.has(item.item_id) && 
-                   userData.coins >= item.price &&
-                   (!item.premium_only || userData.is_premium),
+    // Agregar estado de propiedad a los cupones
+    const couponsWithStatus = filteredCoupons.map(coupon => ({
+      id: coupon.id,
+      code: coupon.code,
+      discountPercent: coupon.discount_percent,
+      partnerName: coupon.partner_name,
+      description: coupon.description,
+      price: coupon.price,
+      validUntil: coupon.valid_until,
+      isActive: coupon.is_active,
+      createdAt: coupon.created_at,
+      owned: purchasedCouponIds.has(coupon.id),
+      canPurchase: !purchasedCouponIds.has(coupon.id) &&
+                   userData.coins >= coupon.price,
     }));
 
-    // Sort items: unowned first, then by price
-    itemsWithStatus.sort((a, b) => {
+    // Ordenar: no comprados primero, luego por precio
+    couponsWithStatus.sort((a, b) => {
       if (a.owned !== b.owned) return a.owned ? 1 : -1;
       return a.price - b.price;
     });
 
     return NextResponse.json({
-      items: itemsWithStatus,
+      items: couponsWithStatus,
       userCoins: userData.coins,
       isPremium: userData.is_premium,
-      totalItems: itemsWithStatus.length,
-      ownedCount: ownedItemIds.size,
+      totalItems: couponsWithStatus.length,
+      ownedCount: purchasedCouponIds.size,
     });
   } catch (error) {
-    console.error('Error fetching store items:', error);
+    console.error('Error fetching store coupons:', error);
     return NextResponse.json(
-      { error: 'Error al obtener items de la tienda' },
+      { error: 'Error al obtener cupones de la tienda' },
       { status: 500 }
     );
   }
 }
-
-
-
-
-
-
