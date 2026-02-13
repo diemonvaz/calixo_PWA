@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
-import { db } from '@/db';
-import { profiles, subscriptions } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
 
 /**
@@ -104,49 +102,48 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Get subscription details from Stripe
+  const supabase = createServiceRoleClient();
   const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-  // Update user profile to premium
-  await db
-    .update(profiles)
-    .set({ 
-      isPremium: true,
-      updatedAt: new Date(),
+  // Update user to premium (users table has is_premium)
+  await supabase
+    .from('users')
+    .update({
+      is_premium: true,
+      updated_at: new Date().toISOString(),
     })
-    .where(eq(profiles.userId, userId));
+    .eq('id', userId);
 
   // Create or update subscription record
-  const [existing] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .limit(1);
+  const { data: existing } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', userId)
+    .limit(1)
+    .maybeSingle();
 
   if (existing) {
-    await db
-      .update(subscriptions)
-      .set({
-        stripeSubscriptionId: subscriptionId,
+    await supabase
+      .from('subscriptions')
+      .update({
+        stripe_subscription_id: subscriptionId,
         status: stripeSubscription.status,
         plan,
-        currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
-        updatedAt: new Date(),
+        current_period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: stripeSubscription.cancel_at_period_end ?? false,
+        updated_at: new Date().toISOString(),
       })
-      .where(eq(subscriptions.userId, userId));
+      .eq('user_id', userId);
   } else {
-    await db.insert(subscriptions).values({
-      userId,
-      stripeSubscriptionId: subscriptionId,
+    await supabase.from('subscriptions').insert({
+      user_id: userId,
+      stripe_subscription_id: subscriptionId,
       status: stripeSubscription.status,
       plan,
-      currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      current_period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+      cancel_at_period_end: stripeSubscription.cancel_at_period_end ?? false,
     });
   }
 
@@ -161,28 +158,28 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return;
   }
 
-  // Update subscription record
-  await db
-    .update(subscriptions)
-    .set({
-      status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      updatedAt: new Date(),
-    })
-    .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
+  const supabase = createServiceRoleClient();
 
-  // Update premium status based on subscription status
-  const isActive = ['active', 'trialing'].includes(subscription.status);
-  
-  await db
-    .update(profiles)
-    .set({ 
-      isPremium: isActive,
-      updatedAt: new Date(),
+  await supabase
+    .from('subscriptions')
+    .update({
+      status: subscription.status,
+      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+      updated_at: new Date().toISOString(),
     })
-    .where(eq(profiles.userId, userId));
+    .eq('stripe_subscription_id', subscription.id);
+
+  const isActive = ['active', 'trialing'].includes(subscription.status);
+
+  await supabase
+    .from('users')
+    .update({
+      is_premium: isActive,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
 
   console.log(`Subscription updated for user ${userId}: ${subscription.status}`);
 }
@@ -195,23 +192,23 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     return;
   }
 
-  // Update profile to non-premium
-  await db
-    .update(profiles)
-    .set({ 
-      isPremium: false,
-      updatedAt: new Date(),
-    })
-    .where(eq(profiles.userId, userId));
+  const supabase = createServiceRoleClient();
 
-  // Update subscription record
-  await db
-    .update(subscriptions)
-    .set({
-      status: 'canceled',
-      updatedAt: new Date(),
+  await supabase
+    .from('users')
+    .update({
+      is_premium: false,
+      updated_at: new Date().toISOString(),
     })
-    .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
+    .eq('id', userId);
+
+  await supabase
+    .from('subscriptions')
+    .update({
+      status: 'canceled',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('stripe_subscription_id', subscription.id);
 
   console.log(`Subscription canceled for user ${userId}`);
 }
@@ -223,7 +220,6 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     return;
   }
 
-  // Get subscription to get userId
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const userId = subscription.metadata?.userId;
 
@@ -241,7 +237,6 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     return;
   }
 
-  // Get subscription to get userId
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const userId = subscription.metadata?.userId;
 
@@ -250,11 +245,4 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   }
 
   console.log(`Payment failed for user ${userId}`);
-  // Here you could send an email notification
 }
-
-
-
-
-
-

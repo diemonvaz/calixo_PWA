@@ -8,6 +8,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { ProfilePhotoModal } from '@/components/profile/profile-photo-modal';
 import { ProfileSettingsModal } from '@/components/profile/profile-settings-modal';
 import { FollowersModal } from '@/components/profile/followers-modal';
+import { EnergyBanner } from '@/components/profile/energy-banner';
+import { PremiumBadge } from '@/components/profile/premium-badge';
 import Image from 'next/image';
 
 type Profile = {
@@ -204,109 +206,144 @@ export default function ProfilePage() {
     );
   }
 
-  const energyLevel = 
-    profile.avatarEnergy >= 70 ? 'Alta' :
-    profile.avatarEnergy >= 40 ? 'Media' : 'Baja';
-
-  const energyColor =
-    profile.avatarEnergy >= 70 ? 'text-green-600' :
-    profile.avatarEnergy >= 40 ? 'text-yellow-600' : 'text-red-600';
-
   return (
-    <div className="min-h-screen bg-gray-50 py-4 md:py-8 px-4 md:px-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl md:text-4xl font-bold text-gray-900">Mi Perfil</h1>
-              <button
-                onClick={() => setIsSettingsModalOpen(true)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                aria-label="Ajustes del perfil"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </button>
-            </div>
-            <p className="text-gray-600 text-lg">@{profile.displayName}</p>
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8 px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header - Layout optimizado para móvil y desktop */}
+        <div className="mb-6 relative">
+          {/* Botón ajustes - esquina superior derecha en móvil */}
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="absolute top-0 right-0 p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:hidden z-10"
+            aria-label="Ajustes del perfil"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
 
-            {/* Stats: Retos, Seguidores, Siguiendo */}
-            <div className="flex gap-4 md:gap-6 mt-3 text-sm">
-              <div>
-                <span className="font-semibold text-gray-900">
-                  {stats?.challengesCompleted ?? 0}
-                </span>
-                <span className="text-gray-600 ml-1">Retos</span>
+          {/* Fila superior: foto + info en móvil, todo en línea en desktop */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+            {/* Foto - monedas debajo solo en móvil */}
+            <div className="flex flex-col items-center sm:items-start gap-3 flex-shrink-0">
+              <button
+                onClick={() => setIsPhotoModalOpen(true)}
+                className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-neutral/20 hover:border-primary/50 transition-colors cursor-pointer bg-gray-100"
+                aria-label="Cambiar foto de perfil"
+              >
+                {profile.profilePhotoUrl ? (
+                  <Image
+                    src={profile.profilePhotoUrl}
+                    alt="Foto de perfil"
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400" />
+                )}
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+                  <span className="text-white text-xs font-medium opacity-0 hover:opacity-100 transition-opacity">
+                    Cambiar
+                  </span>
+                </div>
+              </button>
+              {/* Monedas debajo de la foto - solo móvil */}
+              <div className="flex sm:hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                <span className="text-primary font-semibold text-sm">{profile.coins}</span>
+                <span className="text-neutral text-xs">monedas</span>
               </div>
-              <button
-                onClick={() => {
-                  setFollowersModalType('followers');
-                  setFollowersModalOpen(true);
-                }}
-                className="hover:opacity-80 transition-opacity text-left"
-              >
-                <span className="font-semibold text-gray-900">
-                  {stats?.followersCount ?? 0}
-                </span>
-                <span className="text-gray-600 ml-1">Seguidores</span>
-              </button>
-              <button
-                onClick={() => {
-                  setFollowersModalType('following');
-                  setFollowersModalOpen(true);
-                }}
-                className="hover:opacity-80 transition-opacity text-left"
-              >
-                <span className="font-semibold text-gray-900">
-                  {stats?.followingCount ?? 0}
-                </span>
-                <span className="text-gray-600 ml-1">Siguiendo</span>
-              </button>
+            </div>
+
+            {/* Nombre + badge + ajustes + monedas (desktop) + stats */}
+            <div className="flex-1 min-w-0 text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+                  {profile.displayName}
+                </h1>
+                {profile.isPremium && (
+                  <PremiumBadge size={20} className="flex-shrink-0" />
+                )}
+                <button
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="hidden sm:flex p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  aria-label="Ajustes del perfil"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </button>
+                </div>
+                {/* Monedas a la derecha - solo desktop */}
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 flex-shrink-0">
+                  <span className="text-primary font-semibold text-base">{profile.coins}</span>
+                  <span className="text-neutral text-sm">monedas</span>
+                </div>
+              </div>
+
+              {/* Stats: Retos, Seguidores, Siguiendo - compactos en móvil */}
+              <div className="flex justify-center sm:justify-start gap-6 sm:gap-8 mt-4 text-sm">
+                <div className="flex flex-col items-center sm:items-start gap-0.5">
+                  <span className="font-semibold text-gray-900 text-base">
+                    {stats?.challengesCompleted ?? 0}
+                  </span>
+                  <span className="text-gray-600 text-xs sm:text-sm">Retos</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setFollowersModalType('followers');
+                    setFollowersModalOpen(true);
+                  }}
+                  className="hover:opacity-80 transition-opacity flex flex-col items-center sm:items-start gap-0.5"
+                >
+                  <span className="font-semibold text-gray-900 text-base">
+                    {stats?.followersCount ?? 0}
+                  </span>
+                  <span className="text-gray-600 text-xs sm:text-sm">Seguidores</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setFollowersModalType('following');
+                    setFollowersModalOpen(true);
+                  }}
+                  className="hover:opacity-80 transition-opacity flex flex-col items-center sm:items-start gap-0.5"
+                >
+                  <span className="font-semibold text-gray-900 text-base">
+                    {stats?.followingCount ?? 0}
+                  </span>
+                  <span className="text-gray-600 text-xs sm:text-sm">Siguiendo</span>
+                </button>
+              </div>
             </div>
           </div>
-          {/* Profile Photo */}
-          <button
-            onClick={() => setIsPhotoModalOpen(true)}
-            className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-gray-300 hover:border-blue-500 transition-colors cursor-pointer bg-gray-100 flex-shrink-0"
-            aria-label="Cambiar foto de perfil"
-          >
-            {profile.profilePhotoUrl ? (
-              <Image
-                src={profile.profilePhotoUrl}
-                alt="Foto de perfil"
-                fill
-                className="object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-              </div>
-            )}
-            <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-              <span className="text-white text-xs font-medium opacity-0 hover:opacity-100 transition-opacity">
-                Cambiar
-              </span>
-            </div>
-          </button>
         </div>
+
+        {/* Banner de energía */}
+        <EnergyBanner energy={profile.avatarEnergy} />
 
         {/* Profile Photo Modal */}
         <ProfilePhotoModal
@@ -355,38 +392,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Statistics */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Estadísticas</CardTitle>
-            <CardDescription>
-              Tu progreso en Calixo
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{profile.coins}</p>
-                <p className="text-sm text-gray-600">Monedas</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${energyColor}`}>
-                  {profile.avatarEnergy}
-                </p>
-                <p className="text-sm text-gray-600">Energía ({energyLevel})</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600">
-                  {profile.isPremium ? 'Sí' : 'No'}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {profile.isPremium ? 'Premium' : 'Gratuito'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>

@@ -11,6 +11,22 @@ interface FocusModeBannerProps {
   onOpenModal: () => void;
 }
 
+const FocusIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M13 10V3L4 14h7v7l9-11h-7z"
+    />
+  </svg>
+);
+
 export function FocusModeBanner({ isPremium, focusChallenge, onOpenModal }: FocusModeBannerProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -19,57 +35,43 @@ export function FocusModeBanner({ isPremium, focusChallenge, onOpenModal }: Focu
     onOpenModal();
   };
 
-  // Usuario no premium: mostrar banner con CTA para upgrade
+  // Usuario no premium: banner con CTA para upgrade
   if (!isPremium) {
     return (
       <Link href="/pricing">
         <div
           className={cn(
-            'relative overflow-hidden rounded-2xl p-6 md:p-8',
-            'bg-gradient-to-br from-slate-800 via-indigo-900/90 to-purple-900/90',
-            'border border-indigo-500/30 shadow-xl',
+            'group relative overflow-hidden rounded-2xl p-6 md:p-8',
+            'bg-white border border-neutral/15 shadow-sm',
             'cursor-pointer transition-all duration-300',
-            'hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20'
+            'hover:shadow-lg hover:shadow-primary/10 hover:border-primary/20'
           )}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-400/10 via-transparent to-transparent" />
-          <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/5 blur-2xl" />
-          <div className="absolute bottom-0 left-0 h-24 w-24 -translate-x-8 translate-y-8 rounded-full bg-purple-500/10 blur-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-complementary-emerald/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute top-0 right-0 w-48 h-48 -translate-y-1/2 translate-x-1/2 rounded-full bg-primary/5 blur-3xl" />
 
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                <svg
-                  className="h-7 w-7 text-indigo-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <FocusIcon className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-xl md:text-2xl font-bold text-white font-serif">
-                  MODO FOCUS
+                <h3 className="text-lg md:text-xl font-bold text-text-dark font-serif">
+                  Modo Focus
                 </h3>
-                <p className="text-sm text-indigo-200/90 mt-0.5">
-                  Solo premium • Concéntrate hasta 5 horas
+                <p className="text-sm text-neutral mt-0.5">
+                  Concéntrate hasta 5 horas sin interrupciones
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-300">
-                🔒 Premium
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                Premium
               </span>
-              <span className="text-sm font-medium text-white/90">
-                Actualiza para desbloquear
+              <span className="text-sm font-medium text-neutral">
+                Desbloquear
               </span>
-              <span className="text-indigo-300">→</span>
+              <span className="text-primary group-hover:translate-x-1 transition-transform">→</span>
             </div>
           </div>
         </div>
@@ -85,53 +87,40 @@ export function FocusModeBanner({ isPremium, focusChallenge, onOpenModal }: Focu
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
         'relative overflow-hidden rounded-2xl p-6 md:p-8',
-        'bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800',
-        'border border-indigo-400/40 shadow-xl',
+        'bg-white border border-neutral/15 shadow-sm',
         'cursor-pointer transition-all duration-300',
-        isHovered && 'scale-[1.02] shadow-2xl shadow-indigo-500/30'
+        isHovered && 'shadow-lg shadow-primary/10 border-primary/20'
       )}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent" />
-      <div className="absolute right-0 top-0 h-40 w-40 translate-x-12 -translate-y-12 rounded-full bg-white/20 blur-3xl" />
-      <div className="absolute bottom-0 left-0 h-32 w-32 -translate-x-12 translate-y-12 rounded-full bg-purple-400/20 blur-3xl" />
+      <div className={cn(
+        'absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-complementary-emerald/5 transition-opacity duration-300',
+        isHovered ? 'opacity-100' : 'opacity-0'
+      )} />
+      <div className="absolute top-0 right-0 w-56 h-56 -translate-y-1/2 translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
       <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-            <svg
-              className="h-7 w-7 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <FocusIcon className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-xl md:text-2xl font-bold text-white font-serif">
-              MODO FOCUS
+            <h3 className="text-lg md:text-xl font-bold text-text-dark font-serif">
+              Modo Focus
             </h3>
-            <p className="text-sm text-white/90 mt-0.5">
+            <p className="text-sm text-neutral mt-0.5">
               Hasta 5 horas • 1 moneda/hora + 2 al compartir
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            className="bg-white text-indigo-700 hover:bg-indigo-50 font-semibold shadow-lg"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClick();
-            }}
-          >
-            Iniciar
-          </Button>
-        </div>
+        <Button
+          className="bg-primary text-white hover:bg-primary-dark font-semibold shadow-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClick();
+          }}
+        >
+          Iniciar
+        </Button>
       </div>
     </div>
   );

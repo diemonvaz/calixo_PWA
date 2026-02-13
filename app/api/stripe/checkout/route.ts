@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { stripe } from '@/lib/stripe/server';
-import { db } from '@/db';
-import { profiles, subscriptions } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 
 /**
  * POST /api/stripe/checkout
@@ -12,7 +9,7 @@ import { eq } from 'drizzle-orm';
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -32,65 +29,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user profile
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.userId, user.id))
-      .limit(1);
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
 
-    if (!profile) {
+    if (userError || !userData) {
       return NextResponse.json(
         { error: 'Perfil no encontrado' },
         { status: 404 }
       );
     }
 
-    // Check if user already has premium
-    if (profile.isPremium) {
+    if (userData.is_premium) {
       return NextResponse.json(
         { error: 'Ya tienes una subscripción activa' },
         { status: 400 }
       );
     }
 
-    // ========================================
-    // PRE MODE: Activar premium directamente
-    // ========================================
     const appEnv = process.env.APP_ENV || 'PRO';
-    
+
     if (appEnv === 'PRE') {
       console.log('🔧 PRE MODE: Activando premium sin Stripe');
 
-      // Activar premium en el perfil
-      await db
-        .update(profiles)
-        .set({ 
-          isPremium: true,
-          updatedAt: new Date(),
+      await supabase
+        .from('users')
+        .update({
+          is_premium: true,
+          updated_at: new Date().toISOString(),
         })
-        .where(eq(profiles.userId, user.id));
+        .eq('id', user.id);
 
-      // Crear registro de subscripción simulada
       const now = new Date();
       const oneYearLater = new Date();
       oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
 
-      await db.insert(subscriptions).values({
-        userId: user.id,
-        stripeSubscriptionId: `pre_${user.id}_${Date.now()}`, // ID simulado
+      await supabase.from('subscriptions').insert({
+        user_id: user.id,
+        stripe_subscription_id: `pre_${user.id}_${Date.now()}`,
         status: 'active',
         plan: plan || 'premium',
-        currentPeriodStart: now,
-        currentPeriodEnd: oneYearLater,
-        cancelAtPeriodEnd: false,
-        createdAt: now,
-        updatedAt: now,
+        current_period_start: now.toISOString(),
+        current_period_end: oneYearLater.toISOString(),
+        cancel_at_period_end: false,
       });
 
       console.log('PRE MODE: Premium activado para usuario', user.id);
 
-      // Retornar URL de éxito directamente
       return NextResponse.json({
         sessionId: 'pre_mode_session',
         url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/subscription/success?session_id=pre_mode`,
@@ -98,12 +85,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ========================================
-    // PRO MODE: Proceso normal con Stripe
-    // ========================================
     console.log('💳 PRO MODE: Creando sesión de Stripe');
 
-    // Get user email
     const email = user.email;
 
     if (!email) {
@@ -113,7 +96,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer_email: email,
       line_items: [
@@ -150,5 +132,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,8 @@ import { FeedPost } from '@/components/feed/feed-post';
 import { useToast } from '@/components/ui/toast';
 import { Spinner } from '@/components/ui/spinner';
 import { FollowersModal } from '@/components/profile/followers-modal';
+import { EnergyBanner } from '@/components/profile/energy-banner';
+import { PremiumBadge } from '@/components/profile/premium-badge';
 import Image from 'next/image';
 
 interface UserProfile {
@@ -69,7 +71,8 @@ interface FeedPostData {
   } | null;
 }
 
-export default function PublicProfilePage({ params }: { params: { userId: string } }) {
+export default function PublicProfilePage({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = use(params);
   const router = useRouter();
   const toast = useToast();
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
@@ -86,7 +89,7 @@ export default function PublicProfilePage({ params }: { params: { userId: string
     fetchCurrentUser();
     fetchProfile();
     fetchFeed();
-  }, [params.userId]);
+  }, [userId]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -105,7 +108,7 @@ export default function PublicProfilePage({ params }: { params: { userId: string
       setLoading(true);
       setError('');
       
-      const response = await fetch(`/api/profile/${params.userId}`);
+      const response = await fetch(`/api/profile/${userId}`);
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -132,7 +135,7 @@ export default function PublicProfilePage({ params }: { params: { userId: string
     try {
       setLoadingFeed(true);
       
-      const response = await fetch(`/api/profile/${params.userId}/feed?limit=20&offset=0`);
+      const response = await fetch(`/api/profile/${userId}/feed?limit=20&offset=0`);
       
       if (!response.ok) {
         if (response.status === 403) {
@@ -159,7 +162,7 @@ export default function PublicProfilePage({ params }: { params: { userId: string
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: params.userId,
+          userId,
           action: isFollowing ? 'unfollow' : 'follow',
         }),
       });
@@ -241,7 +244,7 @@ export default function PublicProfilePage({ params }: { params: { userId: string
     return null;
   }
 
-  const isOwnProfile = currentUserId === params.userId;
+  const isOwnProfile = currentUserId === userId;
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 md:py-8 px-4 md:px-6">
@@ -268,47 +271,45 @@ export default function PublicProfilePage({ params }: { params: { userId: string
                 )}
                 
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <h1 className="text-xl md:text-2xl font-bold text-gray-900">
                       {profileData.profile.displayName}
                     </h1>
                     {profileData.profile.isPremium && (
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                        Premium
-                      </span>
+                      <PremiumBadge size={20} />
                     )}
                     {profileData.profile.isPrivate && (
                       <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
-                        🔒 Privado
+                        Privado
                       </span>
                     )}
                   </div>
                   
                   {/* Stats */}
-                  <div className="flex gap-4 md:gap-6 mt-3 text-sm">
-                    <div>
-                      <span className="font-semibold text-gray-900">{profileData.stats.challengesCompleted}</span>
-                      <span className="text-gray-600 ml-1">Retos</span>
+                  <div className="flex gap-6 md:gap-10 mt-4 text-sm">
+                    <div className="flex flex-col items-start gap-2">
+                      <span className="font-semibold text-gray-900 text-base">{profileData.stats.challengesCompleted}</span>
+                      <span className="text-gray-600">Retos</span>
                     </div>
                     <button
                       onClick={() => {
                         setFollowersModalType('followers');
                         setFollowersModalOpen(true);
                       }}
-                      className="hover:opacity-80 transition-opacity text-left"
+                      className="hover:opacity-80 transition-opacity text-left flex flex-col items-start gap-2"
                     >
-                      <span className="font-semibold text-gray-900">{profileData.stats.followersCount}</span>
-                      <span className="text-gray-600 ml-1">Seguidores</span>
+                      <span className="font-semibold text-gray-900 text-base">{profileData.stats.followersCount}</span>
+                      <span className="text-gray-600">Seguidores</span>
                     </button>
                     <button
                       onClick={() => {
                         setFollowersModalType('following');
                         setFollowersModalOpen(true);
                       }}
-                      className="hover:opacity-80 transition-opacity text-left"
+                      className="hover:opacity-80 transition-opacity text-left flex flex-col items-start gap-2"
                     >
-                      <span className="font-semibold text-gray-900">{profileData.stats.followingCount}</span>
-                      <span className="text-gray-600 ml-1">Siguiendo</span>
+                      <span className="font-semibold text-gray-900 text-base">{profileData.stats.followingCount}</span>
+                      <span className="text-gray-600">Siguiendo</span>
                     </button>
                   </div>
                 </div>
@@ -337,10 +338,13 @@ export default function PublicProfilePage({ params }: { params: { userId: string
           </CardHeader>
         </Card>
 
+        {/* Banner de energía */}
+        <EnergyBanner energy={profileData.profile.avatarEnergy} />
+
         <FollowersModal
           isOpen={followersModalOpen}
           type={followersModalType}
-          userId={params.userId}
+          userId={userId}
           onClose={() => setFollowersModalOpen(false)}
         />
 
